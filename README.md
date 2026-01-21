@@ -2,12 +2,15 @@
 
 ROS2 workspace for robotic manipulator simulation, control, and motion planning with Gazebo and MoveIt integration.
 
-### Simulation Video
-[Watch the simulation in action](files/gazeboSimArm.mp4)
-
 ## Overview
 
 This workspace contains the complete ROS2-based system for simulating and controlling the robotic manipulator. It includes robot description files, controller configurations, MoveIt motion planning setup, custom message definitions, and remote interface capabilities.
+
+## Simulation Demo
+
+<video src="https://github.com/niroshan21/Robot_Manipulator/raw/main/files/gazeboSimArm.mp4" controls width="800">
+  Your browser does not support the video tag.
+</video>
 
 ## Package Structure
 
