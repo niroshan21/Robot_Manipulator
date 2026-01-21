@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="manipulator">
 
+    <xacro:arg name="is_sim" default="true"/>
+    <xacro:property name="is_sim" value="$(arg is_sim)"/>
+
     <xacro:include filename="$(find manipulator_description)/urdf/manipulator_gazebo.xacro"/>
     <xacro:include filename="$(find manipulator_description)/urdf/manipulator_ros2_control.xacro"/>
 

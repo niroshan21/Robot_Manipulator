@@ -28,6 +28,7 @@ setup(
     entry_points={
         'console_scripts': [
             'moveit_interface = python_scripts.moveit_interface:main',
+            'simple_lifecycle_node = python_scripts.simple_lifecycle_node:main',
         ],
     },
 )

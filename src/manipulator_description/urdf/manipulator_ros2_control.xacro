@@ -14,9 +14,27 @@
     <!-- This <ros2_control> block configures the hardware/system plugin for ros2_control -->
     <ros2_control type="system" name="RobotSystem">
 
-        <hardware>
-            <plugin>gz_ros2_control/GazeboSimSystem</plugin>
-        </hardware>
+        <xacro:if value="${is_sim}">
+            <hardware>
+                <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+            </hardware>
+
+            <!-- joint_5 mimics joint_4 with multiplier=-1 in the URDF -->
+            <joint name="joint_5">
+                <param name="mimic">joint_4</param>
+                <param name="multiplier">-1</param>
+                <state_interface name="position"/>
+            </joint>
+        </xacro:if>
+
+        <xacro:unless value="${is_sim}">
+            <hardware>
+                <plugin>manipulator_controller/ManipulatorInterface</plugin>
+                <param name="port">/dev/ttyACM0</param>
+            </hardware>
+        </xacro:unless>
+
+
 
         <!-- joint_1 (razor_connector -> motor_2) : URDF limits [-3.14, 3.14] -->
         <joint name="joint_1">
@@ -54,11 +72,6 @@
             <state_interface name="position"/>
         </joint>
 
-        <!-- joint_5 mimics joint_4 with multiplier=-1 in the URDF -->
-        <joint name="joint_5">
-            <param name="mimic">joint_4</param>
-            <param name="multiplier">-1</param>
-        </joint>
 
     </ros2_control>
 

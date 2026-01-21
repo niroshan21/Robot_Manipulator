@@ -5,18 +5,18 @@ import numpy as np
 from rclpy.node import Node
 from rclpy.action import ActionServer
 from manipulator_msgs.action import ManipulatorTask
-from moveit.planning import MoveItPy
-from moveit.core.robot_state import RobotState
+from moveit.planning import MoveItPy  # planning + execution engine
+from moveit.core.robot_state import RobotState  # joint configurations
 
 class TaskServer(Node):
     def __init__(self):
         super().__init__('task_server')
         self.get_logger().info('Starting the Server...')
         self.action_server = ActionServer(
-            self,
-            ManipulatorTask,
-            'task_server',
-            self.goalCallback,
+            self,  # The node that owns the action server.
+            ManipulatorTask,  # The action type - defines goal, result, feedback
+            'task_server', # The name of the action
+            self.goalCallback,  # The callback function to handle incoming goals
         )
     
         self.manipulator = MoveItPy(node_name="moveit_py")
@@ -25,7 +25,8 @@ class TaskServer(Node):
 
         self.get_logger().info('Action Server has been started.')
 
-    def goalCallback(self, goal_handle):
+    # This function is automatically invoked by ROS 2 when: an action client sends a goal to /task_server.
+    def goalCallback(self, goal_handle):  # goal_handle: it contains the goal request data
         self.get_logger().info('Received goal request with task number %d' % goal_handle.request.task_number)
 
         arm_state = RobotState(self.manipulator.get_robot_model())
@@ -83,14 +84,3 @@ if __name__ == '__main__':
     main()
 
 
-
-# cd ~/manipulator_ws
-# colcon build
-
-# . install/setup.bash
-# ros2 run manipulator_py_examples simple_action_server
-
-# ros2 action list
-# . install/setup.bash
-# ros2 action info /fibonacci -t
-# ros2 action send_goal /fibonacci manipulator_msgs/action/Fibonacci "{order: 10}" -f

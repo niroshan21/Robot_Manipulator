@@ -1,0 +1,24 @@
+// generated from rosidl_adapter/resource/action.idl.em
+// with input from manipulator_msgs/action/ManipulatorTask.action
+// generated code does not contain a copyright notice
+
+
+module manipulator_msgs {
+  module action {
+    @verbatim (language="comment", text=
+      "Goal")
+    struct ManipulatorTask_Goal {
+      int32 task_number;
+    };
+    @verbatim (language="comment", text=
+      "Result")
+    struct ManipulatorTask_Result {
+      boolean success;
+    };
+    @verbatim (language="comment", text=
+      "Feedback")
+    struct ManipulatorTask_Feedback {
+      int32 percentage;
+    };
+  };
+};

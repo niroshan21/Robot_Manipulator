@@ -1,0 +1,11 @@
+source;share/manipulator_arduino_firmware/hook/cmake_prefix_path.ps1
+source;share/manipulator_arduino_firmware/hook/cmake_prefix_path.dsv
+source;share/manipulator_arduino_firmware/hook/cmake_prefix_path.sh
+source;share/manipulator_arduino_firmware/hook/pythonpath.ps1
+source;share/manipulator_arduino_firmware/hook/pythonpath.dsv
+source;share/manipulator_arduino_firmware/hook/pythonpath.sh
+source;share/manipulator_arduino_firmware/local_setup.bash
+source;share/manipulator_arduino_firmware/local_setup.dsv
+source;share/manipulator_arduino_firmware/local_setup.ps1
+source;share/manipulator_arduino_firmware/local_setup.sh
+source;share/manipulator_arduino_firmware/local_setup.zsh

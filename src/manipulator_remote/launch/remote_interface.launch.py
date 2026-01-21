@@ -58,3 +58,26 @@ def generate_launch_description():
         task_servet_node_py,
         # task_servet_node_cpp
     ])
+
+
+
+
+# cd FYP/My_Work/Repo/Robot_Manipulator
+# colcon build
+
+# . install/setup.bash
+# ros2 launch manipulator_description gazebo.launch.py
+
+# . install/setup.bash
+# ros2 launch manipulator_controller controller.launch.py
+
+# . install/setup.bash
+# ros2 launch manipulator_moveit moveit.launch.py
+
+# . install/setup.bash
+# ros2 launch manipulator_remote remote_interface.launch.py use_python:=True is_sim:=True
+
+# In another terminal, run the action client
+# ros2 action list
+# . install/setup.bash
+# ros2 action send_goal /task_server manipulator_msgs/action/ManipulatorTask "{task_number: 1}" 
