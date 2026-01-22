@@ -50,3 +50,15 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+# cd FYP/My_Work/Repo/Robot_Manipulator
+# colcon build
+
+# . install/setup.bash
+# ros2 run manipulator_arduino_firmware simple_serial_receiver.py
+
+# To check the published messages
+# . install/setup.bash
+# ros2 topic echo /serial_receiver

@@ -84,3 +84,8 @@ if __name__ == '__main__':
     main()
 
 
+
+# cd FYP/My_Work/Repo/Robot_Manipulator
+# . install/setup.bash
+# ros2 action list
+# ros2 action send_goal /task_server manipulator_msgs/action/ManipulatorTask "{task_number: 1}" 

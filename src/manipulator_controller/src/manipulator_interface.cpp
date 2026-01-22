@@ -118,6 +118,10 @@ CallbackReturn ManipulatorInterface::on_activate(const rclcpp_lifecycle::State &
   {
     arduino_.Open(port_);
     arduino_.SetBaudRate(LibSerial::BaudRate::BAUD_115200);
+    arduino_.SetCharacterSize(LibSerial::CharacterSize::CHAR_SIZE_8);
+    arduino_.SetFlowControl(LibSerial::FlowControl::FLOW_CONTROL_NONE);
+    arduino_.SetParity(LibSerial::Parity::PARITY_NONE);
+    arduino_.SetStopBits(LibSerial::StopBits::STOP_BITS_1);
   }
   catch (...)
   {
@@ -196,9 +200,17 @@ hardware_interface::return_type ManipulatorInterface::write(const rclcpp::Time &
   msg.append(std::to_string(gripper));
   msg.append(",");
 
+  // Only send if port is open and ready
+  if (!arduino_.IsOpen())
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("ManipulatorInterface"), "Serial port is not open!");
+    return hardware_interface::return_type::ERROR;
+  }
+
   try
   {
     RCLCPP_INFO_STREAM(rclcpp::get_logger("ManipulatorInterface"), "Sending new command " << msg);
+    // Write without blocking - just send the data
     arduino_.Write(msg);
   }
   catch (...)

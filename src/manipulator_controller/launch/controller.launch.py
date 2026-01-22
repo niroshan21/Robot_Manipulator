@@ -26,7 +26,7 @@ def generate_launch_description():
         [
             "xacro ",      # Call xacro to process the xacro file
             os.path.join(get_package_share_directory("manipulator_description"), "urdf", "manipulator.urdf.xacro"),
-            " is_sim:=False"
+            " is_sim:=", is_sim
         ]   
         ),
         value_type=str,
@@ -36,8 +36,7 @@ def generate_launch_description():
         package="robot_state_publisher",
         executable="robot_state_publisher",
         parameters=[{"robot_description": robot_description}],     
-        condition=UnlessCondition(is_sim),
-
+        condition=UnlessCondition(is_sim)
     )
 
     controller_manager = Node(

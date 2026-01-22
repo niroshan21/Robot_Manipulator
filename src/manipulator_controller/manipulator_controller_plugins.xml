@@ -1,10 +1,10 @@
-<library path="arduinobot_controller">
-    <class name="arduinobot_controller/ArduinobotInterface"
-      type="arduinobot_controller::ArduinobotInterface"
+<library path="manipulator_controller">
+    <class name="manipulator_controller/ManipulatorInterface"
+      type="manipulator_controller::ManipulatorInterface"
       base_class_type="hardware_interface::SystemInterface"
     >
       <description>
-        Arduinobot Hardware Interface
+        Manipulator Hardware Interface
       </description>
     </class>
 </library>
