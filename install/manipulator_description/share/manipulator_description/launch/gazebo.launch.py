@@ -62,12 +62,12 @@ def generate_launch_description():
         ]
     )
 
-    gz_spawn_entity = Node(
+    gz_spawn_entity = Node(   # Spawn = Dynamically create and insert the robot model into the running Gazebo simulation
         package='ros_gz_sim',
         executable='create',
-        output='screen',
+        output='screen',        # Print logs to terminal (you see them)  
         arguments=['-topic', 'robot_description',
-                   '-name', 'manipulator']
+                   '-name', 'manipulator']   
     )
 
     gz_ros2_bridge = Node(
