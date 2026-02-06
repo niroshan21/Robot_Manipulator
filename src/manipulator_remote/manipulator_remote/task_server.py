@@ -37,12 +37,12 @@ class TaskServer(Node):
 
         if goal_handle.request.task_number == 0:
             arm_joint_goal = np.array([0.0, 0.0, 0.0])
-            gripper_joint_goal = np.array([1.0, -1.0]) 
+            gripper_joint_goal = np.array([0.7, -0.7]) 
         elif goal_handle.request.task_number == 1:
             arm_joint_goal = np.array([-1.14, 1.0, 0.7])
             gripper_joint_goal = np.array([0.0, 0.0])
         elif goal_handle.request.task_number == 2:
-            arm_joint_goal = np.array([1.57, 0.5, -0.3])
+            arm_joint_goal = np.array([1.57, 0.5, -0.5])
             gripper_joint_goal = np.array([0.5, -0.5])
         else:
             self.get_logger().info('Invalid task number received.')

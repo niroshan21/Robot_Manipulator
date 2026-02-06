@@ -10,7 +10,7 @@ void setup()
 void loop()
 {
   // Move from 0 to 180 degrees
-  for (int angle = 0; angle <= 180; angle++)
+  for (int angle = 50; angle <= 120; angle++)
   {
     myServo.write(angle);
     delay(15);   // Small delay for smooth motion
@@ -19,7 +19,7 @@ void loop()
   delay(1000);  // Wait 1 second
 
   // Move from 180 back to 0 degrees
-  for (int angle = 180; angle >= 0; angle--)
+  for (int angle = 120; angle >= 50; angle--)
   {
     myServo.write(angle);
     delay(15);

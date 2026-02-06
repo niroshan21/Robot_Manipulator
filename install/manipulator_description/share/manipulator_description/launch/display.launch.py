@@ -74,10 +74,10 @@ def generate_launch_description():
     #Uses the xacro command to process the URDF/XACRO file.
     #Gets the file path from the "model" launch configuration, Specifies the value type as string.
 
-    robot_state_publisher_node = Node(
-        package="robot_state_publisher",   
+    robot_state_publisher_node = Node(     # Creates a ROS 2 Node object
+        package="robot_state_publisher",   # Package: robot_state_publisher (pre-installed ROS 2 package)
         executable="robot_state_publisher",
-        parameters=[{"robot_description": robot_description}],
+        parameters=[{"robot_description": robot_description}],  # Passes parameters to the node
     )  #"From the robot_state_publisher package, run the program (node) called robot_state_publisher."
     #Pass the robot_description parameter to the node, which contains the processed URDF/XACRO file.
     

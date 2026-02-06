@@ -58,13 +58,13 @@ void loop()
     char chr = Serial.read();
 
     // Start reading BASE value
-    if (chr == 'b')
+    if (chr == 'e')
     {
       reading_base = true;
       val_idx = 0;
     }
     // Ignore other joints
-    else if (chr == 's' || chr == 'e' || chr == 'g')
+    else if (chr == 'b' || chr == 's' || chr == 'g')
     {
       reading_base = false;
     }

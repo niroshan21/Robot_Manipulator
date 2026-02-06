@@ -179,7 +179,7 @@ hardware_interface::return_type ManipulatorInterface::write(const rclcpp::Time &
 
   std::string msg;  // This will hold the full command string sent to Arduino.
   // static_cast<int> explicitly converts a value to an int at compile time.
-  int base = static_cast<int>(((position_commands_.at(0) + (M_PI / 2)) * 180) / M_PI);  // deg = rad × (180 / π), Also shift by + π/2 to match servo zero position
+  int base = 180 - static_cast<int>(((position_commands_.at(0) + (M_PI / 2)) * 180) / M_PI);  // deg = rad × (180 / π), Also shift by + π/2 to match servo zero position
   msg.append("b");
   msg.append(compensateZeros(base));
   msg.append(std::to_string(base));
@@ -189,7 +189,7 @@ hardware_interface::return_type ManipulatorInterface::write(const rclcpp::Time &
   msg.append(compensateZeros(shoulder));
   msg.append(std::to_string(shoulder));
   msg.append(",");
-  int elbow = static_cast<int>(((position_commands_.at(2) + (M_PI / 2)) * 180) / M_PI);
+  int elbow = 180 - static_cast<int>(((position_commands_.at(2) + (M_PI / 2)) * 180) / M_PI);
   msg.append("e");
   msg.append(compensateZeros(elbow));
   msg.append(std::to_string(elbow));

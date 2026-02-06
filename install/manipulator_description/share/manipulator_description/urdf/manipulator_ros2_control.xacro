@@ -39,8 +39,8 @@
         <!-- joint_1 (razor_connector -> motor_2) : URDF limits [-3.14, 3.14] -->
         <joint name="joint_1">
             <command_interface name="position">
-                <param name="min">-3.14159265359</param>
-                <param name="max">3.14159265359</param>
+                <param name="min">-1.57</param>
+                <param name="max">1.57</param>
             </command_interface>
             <state_interface name="position"/>
         </joint>
@@ -48,8 +48,8 @@
         <!-- joint_2 (motor_2 -> h_arm_L) : URDF limits [-1.57, 1.57] -->
         <joint name="joint_2">
             <command_interface name="position">
-                <param name="min">-1.57079632679</param>
-                <param name="max">1.57079632679</param>
+                <param name="min">-0.79</param>
+                <param name="max">1.57</param>
             </command_interface>
             <state_interface name="position"/>
         </joint>
@@ -57,8 +57,8 @@
         <!-- joint_3 (h_arm -> motor_3) : URDF limits [-1.57, 1.57] -->
         <joint name="joint_3">
             <command_interface name="position">
-                <param name="min">-1.57079632679</param>
-                <param name="max">1.57079632679</param>
+                <param name="min">-0.79</param>
+                <param name="max">0.79</param>
             </command_interface>
             <state_interface name="position"/>
         </joint>
@@ -67,7 +67,7 @@
         <joint name="joint_4">
             <command_interface name="position">
                 <param name="min">0.0</param>
-                <param name="max">1.2</param>
+                <param name="max">0.79</param>
             </command_interface>
             <state_interface name="position"/>
         </joint>
