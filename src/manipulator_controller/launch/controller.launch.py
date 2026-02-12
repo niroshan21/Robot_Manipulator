@@ -52,7 +52,8 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"robot_description": robot_description,
-             "use_sim_time": is_sim}
+             "use_sim_time": is_sim},
+            controllers_yaml
         ],
         condition=UnlessCondition(is_sim),
     )
@@ -77,9 +78,7 @@ def generate_launch_description():
         arguments=[
             "arm_controller",
             "-c",
-            "/controller_manager",
-            "-p",
-            controllers_yaml
+            "/controller_manager"
         ]
     )
 
@@ -90,9 +89,7 @@ def generate_launch_description():
         arguments=[
             "gripper_controller",
             "-c",
-            "/controller_manager",
-            "-p",
-            controllers_yaml
+            "/controller_manager"
         ]
     )
 
