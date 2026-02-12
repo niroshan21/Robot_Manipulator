@@ -4,7 +4,8 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.substitutions import Command 
 from launch.substitutions import LaunchConfiguration
-from launch.actions import DeclareLaunchArgument, TimerAction
+from launch.actions import DeclareLaunchArgument, TimerAction, ExecuteProcess, RegisterEventHandler
+from launch.event_handlers import OnProcessExit
 from launch.conditions import UnlessCondition
  
 from launch_ros.actions import Node
@@ -54,37 +55,53 @@ def generate_launch_description():
     
 #-----The spawner is a small utility that tells the controller_manager to load and start a named controller for your robot.
 
-    joint_state_broadcaster_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        output="screen",
-        arguments=[
-            "joint_state_broadcaster",
-            "--controller-manager",    # The spawner uses that namespace to call the controller manager services
-            "/controller_manager"  # Value 
-        ]
+    # Load controller parameters into the controller_manager's parameter server
+    load_joint_state_broadcaster_params = ExecuteProcess(
+        cmd=['ros2', 'param', 'load', '/controller_manager', 
+             os.path.join(get_package_share_directory("manipulator_controller"), "config", "manipulator_controllers.yaml")],
+        output='screen'
     )
 
-    arm_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        output="screen",
-        arguments=[
-            "arm_controller",
-            "--controller-manager",
-            "/controller_manager"
-        ]
+    joint_state_broadcaster_spawner = TimerAction(
+        period=2.0,
+        actions=[Node(
+            package="controller_manager",
+            executable="spawner",
+            output="screen",
+            arguments=[
+                "joint_state_broadcaster",
+                "--controller-manager",
+                "/controller_manager"
+            ]
+        )]
     )
 
-    gripper_controller_spawner = Node(
-        package="controller_manager",
-        executable="spawner",
-        output="screen",
-        arguments=[
-            "gripper_controller",
-            "--controller-manager",
-            "/controller_manager"
-        ]
+    arm_controller_spawner = TimerAction(
+        period=3.0,
+        actions=[Node(
+            package="controller_manager",
+            executable="spawner",
+            output="screen",
+            arguments=[
+                "arm_controller",
+                "--controller-manager",
+                "/controller_manager"
+            ]
+        )]
+    )
+
+    gripper_controller_spawner = TimerAction(
+        period=4.0,
+        actions=[Node(
+            package="controller_manager",
+            executable="spawner",
+            output="screen",
+            arguments=[
+                "gripper_controller",
+                "--controller-manager",
+                "/controller_manager"
+            ]
+        )]
     )
 
 
@@ -92,6 +109,7 @@ def generate_launch_description():
         is_sim_arg,
         robot_state_publisher_node,
         controller_manager,
+        load_joint_state_broadcaster_params,
         joint_state_broadcaster_spawner,
         arm_controller_spawner,
         gripper_controller_spawner
