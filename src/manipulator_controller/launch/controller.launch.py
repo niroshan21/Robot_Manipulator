@@ -72,9 +72,7 @@ def generate_launch_description():
         arguments=[
             "arm_controller",
             "--controller-manager",
-            "/controller_manager",
-            "--param-file",
-            os.path.join(get_package_share_directory("manipulator_controller"), "config", "manipulator_controllers.yaml")
+            "/controller_manager"
         ]
     )
 
@@ -85,9 +83,7 @@ def generate_launch_description():
         arguments=[
             "gripper_controller",
             "--controller-manager",
-            "/controller_manager",
-            "--param-file",
-            os.path.join(get_package_share_directory("manipulator_controller"), "config", "manipulator_controllers.yaml")
+            "/controller_manager"
         ]
     )
 
