@@ -66,10 +66,8 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "joint_state_broadcaster",
-            "--controller-manager",    # The spawner uses that namespace to call the controller manager services
-            "/controller_manager",  # Value
-            "--param-file",
-            controllers_yaml
+            "--controller-manager",
+            "/controller_manager"
         ]
     )
 
@@ -80,9 +78,7 @@ def generate_launch_description():
         arguments=[
             "arm_controller",
             "--controller-manager",
-            "/controller_manager",
-            "--param-file",
-            controllers_yaml
+            "/controller_manager"
         ]
     )
 
@@ -93,9 +89,7 @@ def generate_launch_description():
         arguments=[
             "gripper_controller",
             "--controller-manager",
-            "/controller_manager",
-            "--param-file",
-            controllers_yaml
+            "/controller_manager"
         ]
     )
 
