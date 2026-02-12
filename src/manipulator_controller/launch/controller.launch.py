@@ -52,8 +52,7 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"robot_description": robot_description,
-             "use_sim_time": is_sim},
-            controllers_yaml
+             "use_sim_time": is_sim}
         ],
         condition=UnlessCondition(is_sim),
     )
