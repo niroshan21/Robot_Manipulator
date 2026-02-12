@@ -11,7 +11,7 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-arm_controller:
+controller_manager.arm_controller:
   ros__parameters:
     joints:
       - joint_1
@@ -24,7 +24,7 @@ arm_controller:
     open_loop_control: true
     allow_integration_in_goal_trajectories: true
 
-gripper_controller:
+controller_manager.gripper_controller:
   ros__parameters:
     joints:
       - joint_4
