@@ -39,12 +39,6 @@ def generate_launch_description():
         condition=UnlessCondition(is_sim)
     )
 
-    controllers_yaml = os.path.join(
-        get_package_share_directory("manipulator_controller"),
-        "config",
-        "manipulator_controllers.yaml"
-    )
-
     controller_manager = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -53,7 +47,7 @@ def generate_launch_description():
         parameters=[
             {"robot_description": robot_description,
              "use_sim_time": is_sim},
-            controllers_yaml
+            os.path.join(get_package_share_directory("manipulator_controller"), "config", "manipulator_controllers.yaml")
         ],
         condition=UnlessCondition(is_sim),
     )
@@ -66,8 +60,8 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "joint_state_broadcaster",
-            "-c",
-            "/controller_manager"
+            "--controller-manager",    # The spawner uses that namespace to call the controller manager services
+            "/controller_manager"  # Value 
         ]
     )
 
@@ -77,7 +71,7 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "arm_controller",
-            "-c",
+            "--controller-manager",
             "/controller_manager"
         ]
     )
@@ -88,35 +82,19 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "gripper_controller",
-            "-c",
+            "--controller-manager",
             "/controller_manager"
         ]
     )
 
 
-    # Use TimerAction to delay spawners, ensuring controller_manager is ready
-    delayed_joint_state_broadcaster = TimerAction(
-        period=2.0,
-        actions=[joint_state_broadcaster_spawner]
-    )
-    
-    delayed_arm_controller = TimerAction(
-        period=3.0,
-        actions=[arm_controller_spawner]
-    )
-    
-    delayed_gripper_controller = TimerAction(
-        period=4.0,
-        actions=[gripper_controller_spawner]
-    )
-
     return LaunchDescription([
         is_sim_arg,
         robot_state_publisher_node,
         controller_manager,
-        delayed_joint_state_broadcaster,
-        delayed_arm_controller,
-        delayed_gripper_controller
+        joint_state_broadcaster_spawner,
+        arm_controller_spawner,
+        gripper_controller_spawner
     ])
 
 
