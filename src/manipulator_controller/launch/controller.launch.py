@@ -39,6 +39,12 @@ def generate_launch_description():
         condition=UnlessCondition(is_sim)
     )
 
+    controllers_yaml = os.path.join(
+        get_package_share_directory("manipulator_controller"),
+        "config",
+        "manipulator_controllers.yaml"
+    )
+
     controller_manager = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -46,21 +52,8 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"robot_description": robot_description,
-             "use_sim_time": is_sim,
-             "update_rate": 10,
-             "arm_controller.type": "joint_trajectory_controller/JointTrajectoryController",
-             "arm_controller.joints": ["joint_1", "joint_2", "joint_3"],
-             "arm_controller.command_interfaces": ["position"],
-             "arm_controller.state_interfaces": ["position"],
-             "arm_controller.open_loop_control": True,
-             "arm_controller.allow_integration_in_goal_trajectories": True,
-             "gripper_controller.type": "joint_trajectory_controller/JointTrajectoryController",
-             "gripper_controller.joints": ["joint_4", "joint_5"],
-             "gripper_controller.command_interfaces": ["position"],
-             "gripper_controller.state_interfaces": ["position"],
-             "gripper_controller.open_loop_control": True,
-             "gripper_controller.allow_integration_in_goal_trajectories": True,
-             "joint_state_broadcaster.type": "joint_state_broadcaster/JointStateBroadcaster"}
+             "use_sim_time": is_sim},
+            controllers_yaml
         ],
         condition=UnlessCondition(is_sim),
     )
@@ -73,7 +66,7 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "joint_state_broadcaster",
-            "--controller-manager",
+            "-c",
             "/controller_manager"
         ]
     )
@@ -84,8 +77,10 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "arm_controller",
-            "--controller-manager",
-            "/controller_manager"
+            "-c",
+            "/controller_manager",
+            "-p",
+            controllers_yaml
         ]
     )
 
@@ -95,8 +90,10 @@ def generate_launch_description():
         output="screen",
         arguments=[
             "gripper_controller",
-            "--controller-manager",
-            "/controller_manager"
+            "-c",
+            "/controller_manager",
+            "-p",
+            controllers_yaml
         ]
     )
 
