@@ -39,7 +39,7 @@ def generate_launch_description():
 
     task_servet_node_py = Node(
         package="manipulator_remote",
-        executable="task_server.py",
+        executable="task_server_rpi.py",
         condition=IfCondition(use_python),
         parameters=[moveit_config.to_dict(),
                     {"use_sim_time": is_sim}]

@@ -4,6 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
+from launch.conditions import IfCondition
 
 from launch_ros.actions import Node
 
@@ -18,7 +19,14 @@ def generate_launch_description():
         default_value='true',
     )
 
+    use_gui_arg = DeclareLaunchArgument(
+        'use_gui',
+        default_value='true',
+        description='Launch RViz GUI'
+    )
+
     is_sim = LaunchConfiguration('is_sim')
+    use_gui = LaunchConfiguration('use_gui')
 
     moveit_config = (
         MoveItConfigsBuilder("manipulator", package_name="manipulator_moveit")
@@ -53,11 +61,13 @@ def generate_launch_description():
         parameters=[moveit_config.robot_description,
                     moveit_config.robot_description_semantic,
                     moveit_config.robot_description_kinematics,
-                    moveit_config.joint_limits]
+                    moveit_config.joint_limits],
+        condition=IfCondition(use_gui)
     )
 
     return LaunchDescription([
         is_sim_arg,
+        use_gui_arg,
         move_group_node,
         rviz_node
     ])
