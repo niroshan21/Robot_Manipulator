@@ -3,24 +3,24 @@
 import rclpy
 import numpy as np
 from rclpy.node import Node
-from rclpy.action import ActionServer
+from rclpy.action import ActionServer, ActionClient
 from manipulator_msgs.action import ManipulatorTask
-import moveit_commander
-import sys
+from moveit_msgs.action import MoveGroup
+from moveit_msgs.msg import Constraints, JointConstraint, MotionPlanRequest
+from sensor_msgs.msg import JointState
+import time
 
 class TaskServer(Node):
     def __init__(self):
         super().__init__('task_server')
         self.get_logger().info('Starting the Server...')
         
-        # Initialize moveit_commander
-        moveit_commander.roscpp_initialize(sys.argv)
-        self.robot = moveit_commander.RobotCommander()
-        self.scene = moveit_commander.PlanningSceneInterface()
+        # Create action clients for MoveIt2 MoveGroup
+        self.move_group_client = ActionClient(self, MoveGroup, '/move_action')
         
-        # Get planning groups
-        self.manipulator_arm = moveit_commander.MoveGroupCommander("arm")
-        self.manipulator_gripper = moveit_commander.MoveGroupCommander("gripper")
+        # Wait for action server
+        self.get_logger().info('Waiting for MoveGroup action server...')
+        self.move_group_client.wait_for_server()
         
         self.action_server = ActionServer(
             self,  # The node that owns the action server.
@@ -37,6 +37,8 @@ class TaskServer(Node):
 
         arm_joint_goal = []
         gripper_joint_goal = []
+        arm_joint_names = ['joint_1', 'joint_2', 'joint_3']
+        gripper_joint_names = ['joint_4', 'joint_5']
 
         if goal_handle.request.task_number == 0:
             arm_joint_goal = [0.0, 0.0, 0.0]
@@ -54,46 +56,71 @@ class TaskServer(Node):
             result.success = False
             return result
         
-        # Set joint value targets and plan/execute
-        self.manipulator_arm.set_joint_value_target(arm_joint_goal)
-        self.manipulator_gripper.set_joint_value_target(gripper_joint_goal)
-
-        # Plan and execute arm movement
-        arm_plan = self.manipulator_arm.plan()
-        arm_success = False
-        if isinstance(arm_plan, tuple):
-            # ROS2 Humble returns (success, trajectory, planning_time, error_code)
-            arm_success = arm_plan[0]
-            arm_trajectory = arm_plan[1]
-        else:
-            # Older interface
-            arm_success = arm_plan.joint_trajectory.points != []
-            arm_trajectory = arm_plan
+        # Execute arm movement
+        arm_success = self._move_joints('arm', arm_joint_names, arm_joint_goal)
         
-        # Plan gripper movement
-        gripper_plan = self.manipulator_gripper.plan()
-        gripper_success = False
-        if isinstance(gripper_plan, tuple):
-            gripper_success = gripper_plan[0]
-            gripper_trajectory = gripper_plan[1]
-        else:
-            gripper_success = gripper_plan.joint_trajectory.points != []
-            gripper_trajectory = gripper_plan
+        # Execute gripper movement
+        gripper_success = self._move_joints('gripper', gripper_joint_names, gripper_joint_goal)
 
         if arm_success and gripper_success:
-            self.get_logger().info('Planning succeeded. Executing...')
-            self.manipulator_arm.execute(arm_trajectory, wait=True)
-            self.manipulator_gripper.execute(gripper_trajectory, wait=True)
+            self.get_logger().info('Execution succeeded.')
             goal_handle.succeed()
             result = ManipulatorTask.Result()
             result.success = True
             return result
         else:
-            self.get_logger().info('Planning failed for the given task number.')
+            self.get_logger().info('Execution failed.')
             goal_handle.abort()
             result = ManipulatorTask.Result()
             result.success = False
             return result
+    
+    def _move_joints(self, group_name, joint_names, joint_positions):
+        """Send joint goal to MoveIt2 via action"""
+        goal_msg = MoveGroup.Goal()
+        
+        # Set planning group
+        goal_msg.request.group_name = group_name
+        
+        # Create joint constraints
+        goal_msg.request.goal_constraints.append(Constraints())
+        for name, position in zip(joint_names, joint_positions):
+            joint_constraint = JointConstraint()
+            joint_constraint.joint_name = name
+            joint_constraint.position = position
+            joint_constraint.tolerance_above = 0.01
+            joint_constraint.tolerance_below = 0.01
+            joint_constraint.weight = 1.0
+            goal_msg.request.goal_constraints[0].joint_constraints.append(joint_constraint)
+        
+        # Set other planning parameters
+        goal_msg.request.num_planning_attempts = 10
+        goal_msg.request.allowed_planning_time = 5.0
+        goal_msg.request.max_velocity_scaling_factor = 0.1
+        goal_msg.request.max_acceleration_scaling_factor = 0.1
+        goal_msg.planning_options.plan_only = False
+        
+        # Send goal and wait
+        self.get_logger().info(f'Sending goal for {group_name}...')
+        send_goal_future = self.move_group_client.send_goal_async(goal_msg)
+        rclpy.spin_until_future_complete(self, send_goal_future, timeout_sec=10.0)
+        
+        goal_handle = send_goal_future.result()
+        if not goal_handle.accepted:
+            self.get_logger().error(f'{group_name}: Goal rejected')
+            return False
+        
+        # Wait for result
+        get_result_future = goal_handle.get_result_async()
+        rclpy.spin_until_future_complete(self, get_result_future, timeout_sec=30.0)
+        
+        result = get_result_future.result()
+        if result:
+            self.get_logger().info(f'{group_name}: Execution completed')
+            return True
+        else:
+            self.get_logger().error(f'{group_name}: Execution failed')
+            return False
 
     
 
@@ -105,7 +132,6 @@ def main(args=None):
     except KeyboardInterrupt:
         pass
     finally:
-        moveit_commander.roscpp_shutdown()
         task_server.destroy_node()
         rclpy.shutdown()
 
