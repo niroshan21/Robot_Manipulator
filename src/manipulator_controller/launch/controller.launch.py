@@ -67,7 +67,10 @@ def generate_launch_description():
         arguments=[
             "joint_state_broadcaster",
             "--controller-manager",
-            "/controller_manager"
+            "/controller_manager",
+            "--ros-args",
+            "--params-file",
+            controllers_yaml
         ]
     )
 
@@ -78,7 +81,10 @@ def generate_launch_description():
         arguments=[
             "arm_controller",
             "--controller-manager",
-            "/controller_manager"
+            "/controller_manager",
+            "--ros-args",
+            "--params-file",
+            controllers_yaml
         ]
     )
 
@@ -89,7 +95,10 @@ def generate_launch_description():
         arguments=[
             "gripper_controller",
             "--controller-manager",
-            "/controller_manager"
+            "/controller_manager",
+            "--ros-args",
+            "--params-file",
+            controllers_yaml
         ]
     )
 
