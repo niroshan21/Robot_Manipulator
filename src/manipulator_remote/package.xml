@@ -13,7 +13,7 @@
   <depend>rclpy</depend>
   <depend>manipulator_msgs</depend>
 
-  <exec_depend>moveit_py</exec_depend>
+  <!-- moveit_py removed - not available in humble-base ARM64, task_server_rpi.py uses MoveGroup action client instead -->
   <exec_depend>manipulator_moveit</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
