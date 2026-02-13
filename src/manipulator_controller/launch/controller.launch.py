@@ -19,7 +19,6 @@ def generate_launch_description():
 
     is_sim = LaunchConfiguration("is_sim")
 
-    # Resolve YAML path once and reuse
     controllers_yaml = os.path.join(
         get_package_share_directory("manipulator_controller"),
         "config",
@@ -41,8 +40,6 @@ def generate_launch_description():
         value_type=str,
     )
 
-    # Only launched on real robot (not sim).
-    # robot_state_publisher publishes the TF tree and /robot_description topic.
     robot_state_publisher_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
@@ -50,11 +47,6 @@ def generate_launch_description():
         condition=UnlessCondition(is_sim)
     )
 
-    # FIX: Pass the YAML via --ros-args --params-file inside `arguments`, NOT
-    # inside `parameters=[]`. When mixed with a dict in `parameters=[]`, Humble's
-    # controller_manager silently drops the per-controller blocks (joints,
-    # command_interfaces). Using --ros-args --params-file loads the YAML directly
-    # into the node's parameter server before any controller is configured.
     controller_manager = Node(
         package="controller_manager",
         executable="ros2_control_node",
@@ -62,17 +54,12 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"robot_description": robot_description},
-            {"use_sim_time": False},   # hardcoded False — this node only runs on real robot
-        ],
-        arguments=[
-            "--ros-args",
-            "--params-file", controllers_yaml
+            {"use_sim_time": False},
+            controllers_yaml,
         ],
         condition=UnlessCondition(is_sim),
     )
 
-    # joint_state_broadcaster publishes /joint_states from hardware state interfaces.
-    # Must be active before trajectory controllers start.
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -84,7 +71,6 @@ def generate_launch_description():
         ]
     )
 
-    # Controls joint_1, joint_2, joint_3 via JointTrajectoryController.
     arm_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -96,7 +82,6 @@ def generate_launch_description():
         ]
     )
 
-    # Controls joint_4 (joint_5 is a mimic, handled by ros2_control automatically).
     gripper_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -108,10 +93,6 @@ def generate_launch_description():
         ]
     )
 
-    # Staggered delays for Raspberry Pi startup time:
-    #   5s  — gives controller_manager time to fully initialize
-    #   9s  — joint_state_broadcaster must be active before arm starts
-    #   12s — arm must be active before gripper starts
     return LaunchDescription([
         is_sim_arg,
         robot_state_publisher_node,
