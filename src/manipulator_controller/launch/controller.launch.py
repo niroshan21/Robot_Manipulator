@@ -60,6 +60,8 @@ def generate_launch_description():
         condition=UnlessCondition(is_sim),
     )
 
+    # joint_state_broadcaster does NOT need --param-file because it has no
+    # per-controller parameters (joints/command_interfaces) to load.
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -71,6 +73,10 @@ def generate_launch_description():
         ]
     )
 
+    # FIX: --param-file explicitly delivers the arm_controller parameter block
+    # (joints, command_interfaces, state_interfaces) to the controller via a
+    # set_parameters service call BEFORE configure() is called.
+    # This bypasses Humble's unreliable global context mechanism entirely.
     arm_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -79,9 +85,11 @@ def generate_launch_description():
             "arm_controller",
             "--controller-manager", "/controller_manager",
             "--controller-manager-timeout", "30",
+            "--param-file", controllers_yaml,   # <-- THE FIX
         ]
     )
 
+    # FIX: Same fix applied to gripper_controller.
     gripper_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
@@ -90,6 +98,7 @@ def generate_launch_description():
             "gripper_controller",
             "--controller-manager", "/controller_manager",
             "--controller-manager-timeout", "30",
+            "--param-file", controllers_yaml,   # <-- THE FIX
         ]
     )
 
