@@ -62,7 +62,7 @@ def generate_launch_description():
     # Each delay gives the previous step time to complete.
 
     joint_state_broadcaster_spawner = TimerAction(
-        period=2.0,
+        period=2.0,   # wait 2 s for controller_manager to finish loading yaml
         actions=[
             Node(
                 package="controller_manager",
@@ -70,7 +70,7 @@ def generate_launch_description():
                 output="screen",
                 arguments=[
                     "joint_state_broadcaster",
-                    "-c",
+                    "--controller-manager",
                     "/controller_manager"
                 ]
             )
@@ -78,7 +78,7 @@ def generate_launch_description():
     )
 
     arm_controller_spawner = TimerAction(
-        period=4.0,
+        period=4.0,   # wait for joint_state_broadcaster to be active first
         actions=[
             Node(
                 package="controller_manager",
@@ -86,7 +86,7 @@ def generate_launch_description():
                 output="screen",
                 arguments=[
                     "arm_controller",
-                    "-c",
+                    "--controller-manager",
                     "/controller_manager"
                 ]
             )
@@ -94,7 +94,7 @@ def generate_launch_description():
     )
 
     gripper_controller_spawner = TimerAction(
-        period=4.0,
+        period=4.0,   # same delay as arm — both can activate in parallel
         actions=[
             Node(
                 package="controller_manager",
@@ -102,7 +102,7 @@ def generate_launch_description():
                 output="screen",
                 arguments=[
                     "gripper_controller",
-                    "-c",
+                    "--controller-manager",
                     "/controller_manager"
                 ]
             )

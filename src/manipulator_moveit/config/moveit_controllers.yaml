@@ -20,7 +20,7 @@ moveit_simple_controller_manager:
     default: true
     joints:
       - joint_4
-      - joint_5
+      # joint_5 removed: it's a mimic joint in simulation (handled by Gazebo), not controlled in real hardware
 
 
 # This file connects MoveIt to ros2_control so that planned trajectories are actually sent to your robot’s joint controllers.
