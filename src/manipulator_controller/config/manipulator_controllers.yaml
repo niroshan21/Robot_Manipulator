@@ -1,15 +1,7 @@
-controller_manager:
-  ros__parameters:
-    update_rate: 10
-
-    arm_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
-
-    gripper_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
-
-    joint_state_broadcaster:
-      type: joint_state_broadcaster/JointStateBroadcaster
+# This file is loaded ONLY by the spawner via --param-file flag.
+# It contains per-controller parameters that are pushed to each controller
+# via set_parameters service call BEFORE configure() is called.
+# Do NOT put controller_manager block here — it belongs in controller_manager.yaml.
 
 arm_controller:
   ros__parameters:

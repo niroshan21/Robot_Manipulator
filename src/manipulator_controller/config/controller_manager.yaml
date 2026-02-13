@@ -1,0 +1,19 @@
+# This file is loaded ONLY into the ros2_control_node (C++ binary).
+# It must contain ONLY controller_manager parameters:
+#   - update_rate
+#   - controller type declarations
+# Do NOT put per-controller params (joints, command_interfaces) here —
+# the C++ node will crash (exit code -6) if it sees unknown top-level keys.
+
+controller_manager:
+  ros__parameters:
+    update_rate: 10
+
+    arm_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    gripper_controller:
+      type: joint_trajectory_controller/JointTrajectoryController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
