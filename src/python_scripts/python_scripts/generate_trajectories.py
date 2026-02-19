@@ -146,25 +146,129 @@ class TrajectoryGenerator(Node):
         
         return all_points
     
+    def plan_multi_waypoint_trajectory_with_stays(self, waypoints, stay_durations):
+        """Plan a trajectory through multiple waypoints with pause periods
+        
+        Args:
+            waypoints: List of joint configurations [j1, j2, j3, j4]
+            stay_durations: List of pause durations at each waypoint (in seconds)
+        
+        Returns:
+            Concatenated trajectory data with all waypoints and pauses
+        """
+        self.get_logger().info(f"Planning trajectory through {len(waypoints)} waypoints with pauses")
+        
+        all_points = []
+        time_offset = 0.0
+        
+        for i in range(len(waypoints) - 1):
+            start_config = waypoints[i]
+            goal_config = waypoints[i + 1]
+            
+            self.get_logger().info(f"Segment {i+1}: {start_config} -> {goal_config}")
+            
+            # Split into arm (first 3 joints) and gripper (joint 4)
+            arm_start = start_config[:3]
+            arm_goal = goal_config[:3]
+            gripper_start = [start_config[3], -start_config[3]]
+            gripper_goal = [goal_config[3], -goal_config[3]]
+            
+            # Set start state for arm
+            arm_start_state = RobotState(self.moveit.get_robot_model())
+            arm_start_state.set_joint_group_positions("arm", arm_start)
+            self.arm_component.set_start_state(robot_state=arm_start_state)
+            
+            # Set goal state for arm
+            arm_goal_state = RobotState(self.moveit.get_robot_model())
+            arm_goal_state.set_joint_group_positions("arm", arm_goal)
+            self.arm_component.set_goal_state(robot_state=arm_goal_state)
+            
+            # Plan arm segment
+            arm_plan = self.arm_component.plan()
+            
+            if not arm_plan:
+                self.get_logger().error(f"Failed to plan segment {i+1}")
+                return None
+            
+            # Extract trajectory points
+            traj_msg = arm_plan.trajectory.get_robot_trajectory_msg()
+            joint_traj = traj_msg.joint_trajectory
+            
+            # Add points from this segment (skip first point if not first segment to avoid duplicate)
+            start_idx = 1 if i > 0 else 0
+            for point in joint_traj.points[start_idx:]:
+                # Combine arm joints (3) with gripper joint (1)
+                # Interpolate gripper position for this point
+                segment_time = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9
+                total_segment_time = joint_traj.points[-1].time_from_start.sec + \
+                                    joint_traj.points[-1].time_from_start.nanosec * 1e-9
+                
+                # Linear interpolation for gripper
+                alpha = segment_time / total_segment_time if total_segment_time > 0 else 0
+                gripper_pos = gripper_start[0] + alpha * (gripper_goal[0] - gripper_start[0])
+                
+                # Combine all 4 joints
+                combined_positions = list(point.positions) + [gripper_pos]
+                combined_velocities = list(point.velocities) + [0.0] if point.velocities else []
+                combined_accelerations = list(point.accelerations) + [0.0] if point.accelerations else []
+                
+                point_data = {
+                    'positions': combined_positions,
+                    'velocities': combined_velocities,
+                    'accelerations': combined_accelerations,
+                    'time_from_start_sec': time_offset + segment_time
+                }
+                all_points.append(point_data)
+            
+            # Update time offset for next segment
+            if joint_traj.points:
+                last_time = joint_traj.points[-1].time_from_start.sec + \
+                           joint_traj.points[-1].time_from_start.nanosec * 1e-9
+                time_offset += last_time
+            
+            self.get_logger().info(f"  ✓ Segment {i+1} completed: {len(joint_traj.points)} waypoints")
+            
+            # Add stay/hold period at this waypoint (if required)
+            stay_duration = stay_durations[i + 1]  # Stay duration for the goal of this segment
+            if stay_duration > 0:
+                self.get_logger().info(f"  Adding {stay_duration}s hold at waypoint {i+1}")
+                
+                # Create a hold point: same position, but advanced in time
+                last_point = all_points[-1].copy()
+                last_point['time_from_start_sec'] = time_offset + stay_duration
+                last_point['velocities'] = [0.0] * len(last_point['velocities']) if last_point.get('velocities') else []
+                last_point['accelerations'] = [0.0] * len(last_point['accelerations']) if last_point.get('accelerations') else []
+                
+                all_points.append(last_point)
+                time_offset += stay_duration
+        
+        return all_points
+    
     def generate_and_save_trajectories(self):
         """Main function to generate smooth multi-waypoint trajectory"""
         self.get_logger().info("="*60)
         self.get_logger().info("Starting Multi-Waypoint Trajectory Generation")
         
         # Define full trajectory waypoints (all 4 joints: j1, j2, j3, j4)
+        # Note: gripper [0.5, -0.5] means joint_4 = 0.5
         waypoints = [
             [0.0, 0.0, 0.0, 0.0],           # Start position
-            [-1.14, 1.0, 0.7, 0.0],         # Waypoint 1
-            [1.57, 0.5, -0.5, 0.0],         # Waypoint 2
+            [-1.14, 1.0, 0.7, 0.0],         # Waypoint 1 - gripper closed
+            [1.57, 0.5, -0.5, 0.5],         # Waypoint 2 - gripper half open
             [0.0, 0.0, 0.0, 0.0]            # Return to start
         ]
         
+        # Stay durations at each waypoint (in seconds)
+        # Index corresponds to waypoint: 0 = no stay at start, 5 = stay 5 seconds at waypoint 1, etc.
+        stay_durations = [0.0, 5.0, 5.0, 0.0]  # Stay 5 seconds at waypoints 1 and 2
+        
         self.get_logger().info("Trajectory waypoints:")
         for i, wp in enumerate(waypoints):
-            self.get_logger().info(f"  Waypoint {i}: {wp}")
+            stay_msg = f" (stay {stay_durations[i]}s)" if stay_durations[i] > 0 else ""
+            self.get_logger().info(f"  Waypoint {i}: {wp}{stay_msg}")
         
-        # Plan trajectory through all waypoints
-        trajectory_points = self.plan_multi_waypoint_trajectory(waypoints)
+        # Plan trajectory through all waypoints with stay periods
+        trajectory_points = self.plan_multi_waypoint_trajectory_with_stays(waypoints, stay_durations)
         
         if trajectory_points:
             # Create trajectory data structure
