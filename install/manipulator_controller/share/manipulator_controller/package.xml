@@ -13,7 +13,12 @@
   <depend>rclcpp_lifecycle</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
-  <depend>libserial-dev</depend>
+  
+  <!-- GPIO library for Raspberry Pi servo control -->
+  <!-- Install with: sudo apt-get install pigpio -->
+  
+  <!-- Legacy Arduino support (optional) -->
+  <!-- <depend>libserial-dev</depend> -->
 
   <exec_depend>ros2launch</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>

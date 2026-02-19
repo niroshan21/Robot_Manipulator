@@ -1,10 +1,21 @@
 <library path="manipulator_controller">
+    <!-- Raspberry Pi GPIO Interface (Default) -->
+    <class name="manipulator_controller/ManipulatorInterfaceGPIO"
+      type="manipulator_controller::ManipulatorInterfaceGPIO"
+      base_class_type="hardware_interface::SystemInterface"
+    >
+      <description>
+        Manipulator Hardware Interface using Raspberry Pi GPIO for direct servo control
+      </description>
+    </class>
+    
+    <!-- Arduino Serial Interface (Legacy) -->
     <class name="manipulator_controller/ManipulatorInterface"
       type="manipulator_controller::ManipulatorInterface"
       base_class_type="hardware_interface::SystemInterface"
     >
       <description>
-        Manipulator Hardware Interface
+        Manipulator Hardware Interface using Arduino Serial Communication
       </description>
     </class>
 </library>

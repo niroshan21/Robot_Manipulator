@@ -35,7 +35,10 @@ def generate_launch_description():
     ])
 
 
-# First connect the Arduino to the computer and upload the firmware using the Arduino IDE.
+# Setup for Raspberry Pi GPIO Control (MG995 Servos)
+# 1. Install pigpio: sudo ./setup_rpi_gpio.sh
+# 2. Wire servos to GPIO pins (see WIRING_DIAGRAM.txt)
+# 3. Ensure pigpiod is running: sudo systemctl start pigpiod
 
 # cd ~/Robot_Manipulator
 # colcon build --packages-select manipulator_msgs manipulator_description manipulator_controller manipulator_remote
