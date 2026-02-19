@@ -123,7 +123,7 @@ class LightweightTaskServer(Node):
                     'timestamp': full_data['timestamp'],
                     'planning_group': 'gripper',
                     'planner_id': full_data['planner_id'],
-                    'joint_names': ['joint_4', 'joint_5'],
+                    'joint_names': ['joint_4'],  # Only joint_4, joint_5 is a mimic joint
                     'points': []
                 }
                 
@@ -138,12 +138,12 @@ class LightweightTaskServer(Node):
                     }
                     arm_data['points'].append(arm_point)
                     
-                    # Gripper gets 4th joint (and mimic joint 5)
+                    # Gripper gets only 4th joint (joint_5 mimics automatically)
                     gripper_pos = point['positions'][3]
                     gripper_point = {
-                        'positions': [gripper_pos, -gripper_pos],  # joint_5 mimics joint_4
-                        'velocities': [point['velocities'][3], -point['velocities'][3]] if point.get('velocities') and len(point['velocities']) > 3 else [],
-                        'accelerations': [point['accelerations'][3], -point['accelerations'][3]] if point.get('accelerations') and len(point['accelerations']) > 3 else [],
+                        'positions': [gripper_pos],  # Only joint_4
+                        'velocities': [point['velocities'][3]] if point.get('velocities') and len(point['velocities']) > 3 else [],
+                        'accelerations': [point['accelerations'][3]] if point.get('accelerations') and len(point['accelerations']) > 3 else [],
                         'time_from_start_sec': point['time_from_start_sec']
                     }
                     gripper_data['points'].append(gripper_point)
