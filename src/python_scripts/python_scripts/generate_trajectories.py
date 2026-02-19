@@ -17,12 +17,13 @@ from moveit_msgs.msg import RobotTrajectory
 
 class TrajectoryGenerator(Node):
     """
-    ROS2 Node for generating and saving the 3 predefined task trajectories
+    ROS2 Node for generating smooth multi-waypoint trajectories
     
-    Generates trajectories for:
-    - Task 0: Home position [0.0, 0.0, 0.0]
-    - Task 1: Pick/place position [-1.14, 1.0, 0.7]
-    - Task 2: Alternative position [1.57, 0.5, -0.5]
+    Generates a full trajectory through multiple waypoints:
+    - Start: [0, 0, 0, 0]
+    - Waypoint 1: [-1.14, 1.0, 0.7, 0]
+    - Waypoint 2: [1.57, 0.5, -0.5, 0]
+    - End: [0, 0, 0, 0]
     """
     
     def __init__(self):
@@ -61,182 +62,137 @@ class TrajectoryGenerator(Node):
         
         # Wait for MoveIt to be ready
         time.sleep(2)
-        
-    def generate_task_goals(self):
-        """Generate the 3 predefined task goals from task_server.py"""
-        # These are the exact goals from task_server.py
-        # Each task has both arm and gripper goals
-        task_goals = [
-            {
-                'arm': [0.0, 0.0, 0.0],      # Task 0: Home position
-                'gripper': [0.7, -0.7]       # Gripper open
-            },
-            {
-                'arm': [-1.14, 1.0, 0.7],    # Task 1: Pick/place position
-                'gripper': [0.0, 0.0]        # Gripper closed
-            },
-            {
-                'arm': [1.57, 0.5, -0.5],    # Task 2: Alternative position
-                'gripper': [0.5, -0.5]       # Gripper half open
-            },
-        ]
-        
-        self.get_logger().info("Task goals loaded:")
-        for i, task in enumerate(task_goals):
-            self.get_logger().info(f"  Task {i}: arm={task['arm']}, gripper={task['gripper']}")
-            
-        return task_goals
     
-    def plan_to_joint_goal(self, group_name, joint_goal):
-        """Plan trajectory to a joint goal for specified group
+    def plan_multi_waypoint_trajectory(self, waypoints):
+        """Plan a trajectory through multiple waypoints for arm+gripper (all 4 joints)
         
-        Planning parameters (time, velocity/acceleration scaling) are configured
-        in planning_python_api.yaml and joint_limits.yaml
+        Args:
+            waypoints: List of joint configurations [j1, j2, j3, j4]
+        
+        Returns:
+            Concatenated trajectory data with all waypoints
         """
-        # Select the appropriate planning component
-        planning_component = self.arm_component if group_name == "arm" else self.gripper_component
+        self.get_logger().info(f"Planning trajectory through {len(waypoints)} waypoints")
         
-        # Create robot state for goal
-        robot_state = RobotState(self.moveit.get_robot_model())
+        all_points = []
+        time_offset = 0.0
         
-        # Set joint positions
-        robot_state.set_joint_group_positions(group_name, joint_goal)
-        
-        # Set start state to current
-        planning_component.set_start_state_to_current_state()
-        
-        # Set goal state
-        planning_component.set_goal_state(robot_state=robot_state)
-        
-        # Plan (using parameters from YAML configuration files)
-        # - planning_time: 10.0s (from planning_python_api.yaml)
-        # - velocity_scaling: 0.3 (30% of max speed)
-        # - acceleration_scaling: 0.3 (30% of max acceleration)
-        self.get_logger().info(f"Planning {group_name} to goal: {joint_goal}")
-        self.get_logger().info(f"  - Using smooth trajectory settings from YAML config")
-        plan_result = planning_component.plan()
-        
-        if plan_result:
-            # Log waypoint count and trajectory duration
-            traj_msg = plan_result.trajectory.get_robot_trajectory_msg()
-            num_waypoints = len(traj_msg.joint_trajectory.points)
-            total_time = traj_msg.joint_trajectory.points[-1].time_from_start.sec + \
-                        traj_msg.joint_trajectory.points[-1].time_from_start.nanosec * 1e-9
-            self.get_logger().info(f"  ✓ Generated {num_waypoints} waypoints, duration: {total_time:.2f}s")
-        
-        return plan_result
-
-    
-    def save_trajectory(self, plan_result, trajectory_name, group_name):
-        """Save trajectory to JSON file"""
-        if not plan_result:
-            self.get_logger().error("Cannot save - planning failed!")
-            return False
-        
-        robot_model = self.moveit.get_robot_model()
-        joint_model_group = robot_model.get_joint_model_group(group_name)
-        
-        # Initialize trajectory data structure
-        trajectory_data = {
-            'name': trajectory_name,
-            'timestamp': datetime.now().isoformat(),
-            'planning_group': group_name,
-            'planner_id': 'OMPL',
-            'joint_names': list(joint_model_group.active_joint_model_names),
-            'points': []
-        }
-        
-        # Try to extract the trajectory
-        try:
-            # The plan_result.trajectory is a RobotTrajectory object
-            # Use get_robot_trajectory_msg() to convert to ROS message format
-            traj = plan_result.trajectory
+        for i in range(len(waypoints) - 1):
+            start_config = waypoints[i]
+            goal_config = waypoints[i + 1]
             
-            # Convert to ROS message
-            traj_msg = traj.get_robot_trajectory_msg()
+            self.get_logger().info(f"Segment {i+1}: {start_config} -> {goal_config}")
             
-            # Now we can access the joint_trajectory
+            # Split into arm (first 3 joints) and gripper (joint 4)
+            arm_start = start_config[:3]
+            arm_goal = goal_config[:3]
+            gripper_start = [start_config[3], -start_config[3]]  # joint_4 and mimic joint_5
+            gripper_goal = [goal_config[3], -goal_config[3]]
+            
+            # Set start state for arm
+            arm_start_state = RobotState(self.moveit.get_robot_model())
+            arm_start_state.set_joint_group_positions("arm", arm_start)
+            self.arm_component.set_start_state(robot_state=arm_start_state)
+            
+            # Set goal state for arm
+            arm_goal_state = RobotState(self.moveit.get_robot_model())
+            arm_goal_state.set_joint_group_positions("arm", arm_goal)
+            self.arm_component.set_goal_state(robot_state=arm_goal_state)
+            
+            # Plan arm segment
+            arm_plan = self.arm_component.plan()
+            
+            if not arm_plan:
+                self.get_logger().error(f"Failed to plan segment {i+1}")
+                return None
+            
+            # Extract trajectory points
+            traj_msg = arm_plan.trajectory.get_robot_trajectory_msg()
             joint_traj = traj_msg.joint_trajectory
             
-            # Extract each waypoint
-            for point in joint_traj.points:
+            # Add points from this segment (skip first point if not first segment to avoid duplicate)
+            start_idx = 1 if i > 0 else 0
+            for point in joint_traj.points[start_idx:]:
+                # Combine arm joints (3) with gripper joint (1)
+                # Interpolate gripper position for this point
+                segment_time = point.time_from_start.sec + point.time_from_start.nanosec * 1e-9
+                total_segment_time = joint_traj.points[-1].time_from_start.sec + \
+                                    joint_traj.points[-1].time_from_start.nanosec * 1e-9
+                
+                # Linear interpolation for gripper
+                alpha = segment_time / total_segment_time if total_segment_time > 0 else 0
+                gripper_pos = gripper_start[0] + alpha * (gripper_goal[0] - gripper_start[0])
+                
+                # Combine all 4 joints
+                combined_positions = list(point.positions) + [gripper_pos]
+                combined_velocities = list(point.velocities) + [0.0] if point.velocities else []
+                combined_accelerations = list(point.accelerations) + [0.0] if point.accelerations else []
+                
                 point_data = {
-                    'positions': list(point.positions),
-                    'velocities': list(point.velocities) if point.velocities else [],
-                    'accelerations': list(point.accelerations) if point.accelerations else [],
-                    'time_from_start_sec': point.time_from_start.sec + point.time_from_start.nanosec * 1e-9
+                    'positions': combined_positions,
+                    'velocities': combined_velocities,
+                    'accelerations': combined_accelerations,
+                    'time_from_start_sec': time_offset + segment_time
                 }
-                trajectory_data['points'].append(point_data)
+                all_points.append(point_data)
+            
+            # Update time offset for next segment
+            if joint_traj.points:
+                last_time = joint_traj.points[-1].time_from_start.sec + \
+                           joint_traj.points[-1].time_from_start.nanosec * 1e-9
+                time_offset += last_time
+            
+            self.get_logger().info(f"  ✓ Segment {i+1} completed: {len(joint_traj.points)} waypoints")
+        
+        return all_points
+    
+    def generate_and_save_trajectories(self):
+        """Main function to generate smooth multi-waypoint trajectory"""
+        self.get_logger().info("="*60)
+        self.get_logger().info("Starting Multi-Waypoint Trajectory Generation")
+        
+        # Define full trajectory waypoints (all 4 joints: j1, j2, j3, j4)
+        waypoints = [
+            [0.0, 0.0, 0.0, 0.0],           # Start position
+            [-1.14, 1.0, 0.7, 0.0],         # Waypoint 1
+            [1.57, 0.5, -0.5, 0.0],         # Waypoint 2
+            [0.0, 0.0, 0.0, 0.0]            # Return to start
+        ]
+        
+        self.get_logger().info("Trajectory waypoints:")
+        for i, wp in enumerate(waypoints):
+            self.get_logger().info(f"  Waypoint {i}: {wp}")
+        
+        # Plan trajectory through all waypoints
+        trajectory_points = self.plan_multi_waypoint_trajectory(waypoints)
+        
+        if trajectory_points:
+            # Create trajectory data structure
+            trajectory_data = {
+                'name': 'full_smooth_trajectory',
+                'timestamp': datetime.now().isoformat(),
+                'planning_group': 'full_robot',
+                'planner_id': 'OMPL',
+                'joint_names': ['joint_1', 'joint_2', 'joint_3', 'joint_4'],
+                'points': trajectory_points
+            }
             
             # Save to file
-            filename = os.path.join(self.workspace_root, f"{trajectory_name}.json")
+            filename = os.path.join(self.workspace_root, "full_smooth_trajectory.json")
             with open(filename, 'w') as f:
                 json.dump(trajectory_data, f, indent=2)
             
-            self.get_logger().info(f"✓ Saved trajectory to: {filename}")
-            self.get_logger().info(f"  - Waypoints: {len(trajectory_data['points'])}")
-            self.get_logger().info(f"  - Joints: {joint_traj.joint_names}")
-            return True
-                
-        except Exception as e:
-            self.get_logger().error(f"Failed to extract trajectory: {e}")
-            import traceback
-            traceback.print_exc()
-            return False
-    
-    def generate_and_save_trajectories(self):
-        """Main function to generate multiple trajectories and save them"""
-        self.get_logger().info("="*60)
-        self.get_logger().info("Starting Task Trajectory Generation")
-        tasks = self.generate_task_goals()
-        
-        successful_trajectories = 0
-        failed_trajectories = 0
-        
-        for i, task in enumerate(tasks):
-            self.get_logger().info(f"\n--- Generating Task {i} Trajectories ---")
-            
-            # Plan arm trajectory
-            arm_plan_result = self.plan_to_joint_goal("arm", task['arm'])
-            
-            # Plan gripper trajectory
-            gripper_plan_result = self.plan_to_joint_goal("gripper", task['gripper'])
-            
-            if arm_plan_result and gripper_plan_result:
-                # Save arm trajectory
-                arm_trajectory_name = f"task_{i}_arm_trajectory"
-                if self.save_trajectory(arm_plan_result, arm_trajectory_name, "arm"):
-                    self.get_logger().info(f"✓ Task {i} arm trajectory saved")
-                else:
-                    failed_trajectories += 1
-                    self.get_logger().error(f"✗ Failed to save Task {i} arm trajectory")
-                
-                # Save gripper trajectory
-                gripper_trajectory_name = f"task_{i}_gripper_trajectory"
-                if self.save_trajectory(gripper_plan_result, gripper_trajectory_name, "gripper"):
-                    self.get_logger().info(f"✓ Task {i} gripper trajectory saved")
-                    successful_trajectories += 1
-                else:
-                    failed_trajectories += 1
-                    self.get_logger().error(f"✗ Failed to save Task {i} gripper trajectory")
-            else:
-                failed_trajectories += 1
-                if not arm_plan_result:
-                    self.get_logger().error(f"✗ Arm planning failed for Task {i}")
-                if not gripper_plan_result:
-                    self.get_logger().error(f"✗ Gripper planning failed for Task {i}")
-            
-            # Small delay between trajectories
-            time.sleep(0.5)
-        
-        # Summary
-        self.get_logger().info("\n" + "="*60)
-        self.get_logger().info("Task Trajectory Generation Complete")
-        self.get_logger().info("="*60)
-        self.get_logger().info(f"Successful: {successful_trajectories}/{len(tasks)}")
-        self.get_logger().info(f"Failed: {failed_trajectories}/{len(tasks)}")
-        self.get_logger().info(f"Save directory: {self.workspace_root}")
-        self.get_logger().info("="*60)
+            total_time = trajectory_points[-1]['time_from_start_sec']
+            self.get_logger().info("\n" + "="*60)
+            self.get_logger().info("✓ Trajectory Generation Complete!")
+            self.get_logger().info("="*60)
+            self.get_logger().info(f"Saved trajectory to: {filename}")
+            self.get_logger().info(f"Total waypoints: {len(trajectory_points)}")
+            self.get_logger().info(f"Total duration: {total_time:.2f} seconds")
+            self.get_logger().info(f"Joints: {trajectory_data['joint_names']}")
+            self.get_logger().info("="*60)
+        else:
+            self.get_logger().error("✗ Trajectory generation failed!")
 
 
 def main(args=None):
