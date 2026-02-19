@@ -1,6 +1,6 @@
 {
   "name": "task_1_gripper_trajectory",
-  "timestamp": "2026-02-18T03:06:11.801253",
+  "timestamp": "2026-02-19T06:33:04.146376",
   "planning_group": "gripper",
   "planner_id": "OMPL",
   "joint_names": [

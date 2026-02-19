@@ -88,15 +88,11 @@ class TrajectoryGenerator(Node):
         return task_goals
     
     def plan_to_joint_goal(self, group_name, joint_goal):
-        """Plan trajectory to a joint goal for specified group"""
-        # Select the appropriate planning component
-        planning_component = self.arm_component if group_name == "arm" else self.gripper_component
+        """Plan trajectory to a joint goal for specified group
         
-        # Create robot state for goal
-        robot_state = RobotState(self.moveit.get_robot_model())
-        
-    def plan_to_joint_goal(self, group_name, joint_goal):
-        """Plan trajectory to a joint goal for specified group"""
+        Planning parameters (time, velocity/acceleration scaling) are configured
+        in planning_python_api.yaml and joint_limits.yaml
+        """
         # Select the appropriate planning component
         planning_component = self.arm_component if group_name == "arm" else self.gripper_component
         
@@ -112,9 +108,21 @@ class TrajectoryGenerator(Node):
         # Set goal state
         planning_component.set_goal_state(robot_state=robot_state)
         
-        # Plan
+        # Plan (using parameters from YAML configuration files)
+        # - planning_time: 10.0s (from planning_python_api.yaml)
+        # - velocity_scaling: 0.3 (30% of max speed)
+        # - acceleration_scaling: 0.3 (30% of max acceleration)
         self.get_logger().info(f"Planning {group_name} to goal: {joint_goal}")
+        self.get_logger().info(f"  - Using smooth trajectory settings from YAML config")
         plan_result = planning_component.plan()
+        
+        if plan_result:
+            # Log waypoint count and trajectory duration
+            traj_msg = plan_result.trajectory.get_robot_trajectory_msg()
+            num_waypoints = len(traj_msg.joint_trajectory.points)
+            total_time = traj_msg.joint_trajectory.points[-1].time_from_start.sec + \
+                        traj_msg.joint_trajectory.points[-1].time_from_start.nanosec * 1e-9
+            self.get_logger().info(f"  ✓ Generated {num_waypoints} waypoints, duration: {total_time:.2f}s")
         
         return plan_result
 
