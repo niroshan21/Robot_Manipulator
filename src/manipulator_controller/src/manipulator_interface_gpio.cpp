@@ -19,11 +19,11 @@ ManipulatorInterfaceGPIO::~ManipulatorInterfaceGPIO()
     // Stop all PWM signals
     for (int pin : gpio_pins_)
     {
-      gpioServo(pin, 0);  // Turn off servo
+      set_servo_pulsewidth(pi_, pin, 0);  // Turn off servo
     }
     
-    // Terminate pigpio
-    gpioTerminate();
+    // Disconnect from pigpio daemon
+    pigpio_stop(pi_);
     gpio_initialized_ = false;
   }
 }
@@ -99,25 +99,26 @@ CallbackReturn ManipulatorInterfaceGPIO::on_activate(const rclcpp_lifecycle::Sta
 {
   RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceGPIO"), "Initializing GPIO hardware...");
 
-  // Initialize pigpio library
-  if (gpioInitialise() < 0)
+  // Connect to pigpio daemon (localhost, default port 8888)
+  pi_ = pigpio_start(nullptr, nullptr);
+  if (pi_ < 0)
   {
     RCLCPP_FATAL(rclcpp::get_logger("ManipulatorInterfaceGPIO"), 
-                 "Failed to initialize pigpio! Make sure pigpiod daemon is running.");
+                 "Failed to connect to pigpiod daemon! Error code: %d. Make sure pigpiod is running.", pi_);
     return CallbackReturn::FAILURE;
   }
   gpio_initialized_ = true;
+  RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceGPIO"), "Connected to pigpiod daemon successfully");
 
   // Configure GPIO pins as outputs and set to neutral position (90 degrees for MG995)
   for (int pin : gpio_pins_)
   {
-    gpioSetMode(pin, PI_OUTPUT);
+    set_mode(pi_, pin, PI_OUTPUT);
     
     // Set initial position to 90 degrees (neutral/center position)
-    // Using gpioServo which handles the PWM automatically at 50Hz
     // MG995 servos: 1500us = 90 degrees (center)
     
-    if (gpioServo(pin, PWM_CENTER) != 0)
+    if (set_servo_pulsewidth(pi_, pin, PWM_CENTER) != 0)
     {
       RCLCPP_ERROR(rclcpp::get_logger("ManipulatorInterfaceGPIO"), 
                    "Failed to set servo on GPIO pin %d", pin);
@@ -151,10 +152,10 @@ CallbackReturn ManipulatorInterfaceGPIO::on_deactivate(const rclcpp_lifecycle::S
     // Stop all PWM signals
     for (int pin : gpio_pins_)
     {
-      gpioServo(pin, 0);  // Turn off servo PWM
+      set_servo_pulsewidth(pi_, pin, 0);  // Turn off servo PWM
     }
     
-    gpioTerminate();
+    pigpio_stop(pi_);
     gpio_initialized_ = false;
   }
 
@@ -210,10 +211,10 @@ hardware_interface::return_type ManipulatorInterfaceGPIO::write(const rclcpp::Ti
   int gripper_pulse = angleToPulseWidth(gripper_angle * M_PI / 180.0, 0, M_PI);
 
   // Set servo positions via GPIO PWM
-  gpioServo(gpio_pins_[0], base_pulse);
-  gpioServo(gpio_pins_[1], shoulder_pulse);
-  gpioServo(gpio_pins_[2], elbow_pulse);
-  gpioServo(gpio_pins_[3], gripper_pulse);
+  set_servo_pulsewidth(pi_, gpio_pins_[0], base_pulse);
+  set_servo_pulsewidth(pi_, gpio_pins_[1], shoulder_pulse);
+  set_servo_pulsewidth(pi_, gpio_pins_[2], elbow_pulse);
+  set_servo_pulsewidth(pi_, gpio_pins_[3], gripper_pulse);
 
   RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceGPIO"), 
               "Servo positions - Base: %d°(%dus), Shoulder: %d°(%dus), Elbow: %d°(%dus), Gripper: %d°(%dus)",

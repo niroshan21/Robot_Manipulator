@@ -73,6 +73,9 @@ private:
   
   // GPIO initialization flag
   bool gpio_initialized_;
+  
+  // pigpio daemon handle
+  int pi_;
 };
 
 }  // namespace manipulator_controller
