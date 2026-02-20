@@ -34,9 +34,10 @@ ament_target_dependencies(${PROJECT_NAME}_serial
 
 # Check if pigpio library is available (required for Raspberry Pi GPIO)
 find_library(PIGPIO_LIB pigpio)
+find_library(PIGPIOD_IF2_LIB pigpiod_if2)
 
-if(PIGPIO_LIB)
-  message(STATUS "pigpio library found - building GPIO interface")
+if(PIGPIO_LIB AND PIGPIOD_IF2_LIB)
+  message(STATUS "pigpio libraries found - building GPIO interface")
   
   # Raspberry Pi GPIO version (new default)
   add_library(${PROJECT_NAME} SHARED 
@@ -47,6 +48,7 @@ if(PIGPIO_LIB)
   )
   target_link_libraries(${PROJECT_NAME}
     pigpio
+    pigpiod_if2
   )
   ament_target_dependencies(${PROJECT_NAME}
     hardware_interface
