@@ -253,9 +253,9 @@ class TrajectoryGenerator(Node):
         # Format: [joint_1 (base), joint_2 (shoulder), joint_3 (elbow), joint_4 (gripper)]
         waypoints = [
             [0.0, 0.0, 0.0, 0.0],           # Start: home position (all joints at zero)
-            [0.0, 0.524, 0.524, 0.0],       # Waypoint 1: raise arm (shoulder and elbow ~30°), gripper closed
-            [1.5, 0.524, 0.524, 0.0],       # Waypoint 2: rotate base right (~86°), arm raised, gripper closed
-            [-1.5, 0.524, 0.524, 0.0]       # Waypoint 3: rotate base left (~86°), arm raised, gripper closed
+            [0.0, 0.5, 0.5, 0.0],       # Waypoint 1: raise arm (shoulder and elbow ~30°), gripper closed
+            [1.5, 0.5, 0.5, 0.0],       # Waypoint 2: rotate base right (~86°), arm raised, gripper closed
+            [-1.5, 0.5, 0.5, 0.0]       # Waypoint 3: rotate base left (~86°), arm raised, gripper closed
         ]
         
         # Stay durations at each waypoint (in seconds)
