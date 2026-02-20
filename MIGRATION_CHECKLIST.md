@@ -23,6 +23,9 @@
 - [ ] Rebuild the workspace:
   ```bash
   colcon build
+
+  colcon build --packages-select manipulator_msgs manipulator_description manipulator_controller manipulator_remote manipulator_moveit manipulator_arduino_firmware python_scripts
+  
   source install/setup.bash
   ```
 
