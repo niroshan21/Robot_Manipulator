@@ -29,8 +29,13 @@
 
         <xacro:unless value="${is_sim}">
             <hardware>
-                <plugin>manipulator_controller/ManipulatorInterface</plugin>
-                <param name="port">/dev/ttyACM0</param>
+                <plugin>manipulator_controller/ManipulatorInterfaceGPIO</plugin>
+                <!-- GPIO pin assignments for Raspberry Pi -->
+                <!-- Default pins - adjust based on your wiring -->
+                <param name="gpio_base">17</param>      <!-- GPIO 17 for base servo -->
+                <param name="gpio_shoulder">18</param>  <!-- GPIO 18 for shoulder servo -->
+                <param name="gpio_elbow">27</param>     <!-- GPIO 27 for elbow servo -->
+                <param name="gpio_gripper">22</param>   <!-- GPIO 22 for gripper servo -->
             </hardware>
         </xacro:unless>
 

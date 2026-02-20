@@ -160,6 +160,67 @@ class LightweightTaskServer(Node):
                 )
             else:
                 self.get_logger().warn(f'Missing full_smooth_trajectory.json for task 3')
+            
+            # Load tasks 5, 6, 7, 8 (4-joint trajectory files)
+            for task_num in [5, 6, 7, 8]:
+                task_file = os.path.join(self.trajectory_path, f'task_{task_num}.json')
+                
+                if os.path.exists(task_file):
+                    with open(task_file, 'r') as f:
+                        full_data = json.load(f)
+                    
+                    # Split the 4-joint trajectory into arm (joints 1-3) and gripper (joint 4)
+                    arm_data = {
+                        'name': f'task_{task_num}_arm_trajectory',
+                        'timestamp': full_data['timestamp'],
+                        'planning_group': 'arm',
+                        'planner_id': full_data['planner_id'],
+                        'joint_names': ['joint_1', 'joint_2', 'joint_3'],
+                        'points': []
+                    }
+                    
+                    gripper_data = {
+                        'name': f'task_{task_num}_gripper_trajectory',
+                        'timestamp': full_data['timestamp'],
+                        'planning_group': 'gripper',
+                        'planner_id': full_data['planner_id'],
+                        'joint_names': ['joint_4'],
+                        'points': []
+                    }
+                    
+                    # Split each waypoint
+                    for point in full_data['points']:
+                        # Arm gets first 3 joints
+                        arm_point = {
+                            'positions': point['positions'][:3],
+                            'velocities': point['velocities'][:3] if point.get('velocities') else [],
+                            'accelerations': point['accelerations'][:3] if point.get('accelerations') else [],
+                            'time_from_start_sec': point['time_from_start_sec']
+                        }
+                        arm_data['points'].append(arm_point)
+                        
+                        # Gripper gets only 4th joint
+                        gripper_pos = point['positions'][3]
+                        gripper_point = {
+                            'positions': [gripper_pos],
+                            'velocities': [point['velocities'][3]] if point.get('velocities') and len(point['velocities']) > 3 else [],
+                            'accelerations': [point['accelerations'][3]] if point.get('accelerations') and len(point['accelerations']) > 3 else [],
+                            'time_from_start_sec': point['time_from_start_sec']
+                        }
+                        gripper_data['points'].append(gripper_point)
+                    
+                    self.trajectories[task_num] = {
+                        'arm': arm_data,
+                        'gripper': gripper_data
+                    }
+                    
+                    self.get_logger().info(
+                        f'✓ Loaded Task {task_num}: '
+                        f'arm ({len(arm_data["points"])} pts), '
+                        f'gripper ({len(gripper_data["points"])} pts)'
+                    )
+                else:
+                    self.get_logger().warn(f'Missing task_{task_num}.json')
                     
         except Exception as e:
             self.get_logger().error(f'Failed to load trajectories: {e}')
