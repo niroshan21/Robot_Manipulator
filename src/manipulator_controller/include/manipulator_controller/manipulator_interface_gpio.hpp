@@ -61,8 +61,8 @@ private:
   std::array<int, 4> gpio_pins_;  // [base, shoulder, elbow, gripper]
   
   // PWM parameters optimized for MG995 servos (microseconds)
-  static constexpr int PWM_MIN = 1000;  // Minimum pulse width (0 degrees) - MG995 optimal
-  static constexpr int PWM_MAX = 2000;  // Maximum pulse width (180 degrees) - MG995 optimal
+  static constexpr int PWM_MIN = 500;  // Minimum pulse width (0 degrees) - MG995 optimal
+  static constexpr int PWM_MAX = 2500;  // Maximum pulse width (180 degrees) - MG995 optimal
   static constexpr int PWM_CENTER = 1500; // Center position (90 degrees)
   static constexpr int PWM_FREQ = 50;   // Standard servo frequency (50Hz = 20ms period)
   
