@@ -1,0 +1,335 @@
+{
+  "name": "task_2_gripper_trajectory",
+  "timestamp": "2026-02-19T06:33:04.732627",
+  "planning_group": "gripper",
+  "planner_id": "OMPL",
+  "joint_names": [
+    "joint_4"
+  ],
+  "points": [
+    {
+      "positions": [
+        0.0
+      ],
+      "velocities": [
+        0.0003
+      ],
+      "accelerations": [
+        0.3
+      ],
+      "time_from_start_sec": 0.0
+    },
+    {
+      "positions": [
+        0.0014999999999999976
+      ],
+      "velocities": [
+        0.030000000000000058
+      ],
+      "accelerations": [
+        0.3000000000000916
+      ],
+      "time_from_start_sec": 0.1
+    },
+    {
+      "positions": [
+        0.005999999999999979
+      ],
+      "velocities": [
+        0.05999999999999882
+      ],
+      "accelerations": [
+        0.29999999999880095
+      ],
+      "time_from_start_sec": 0.2
+    },
+    {
+      "positions": [
+        0.013499991957966844
+      ],
+      "velocities": [
+        0.09006520787746217
+      ],
+      "accelerations": [
+        0.3000000000000777
+      ],
+      "time_from_start_sec": 0.30000000000000004
+    },
+    {
+      "positions": [
+        0.023999971320640058
+      ],
+      "velocities": [
+        0.12008515880997596
+      ],
+      "accelerations": [
+        0.3000000000030753
+      ],
+      "time_from_start_sec": 0.4
+    },
+    {
+      "positions": [
+        0.03749993726875585
+      ],
+      "velocities": [
+        0.15013037781678462
+      ],
+      "accelerations": [
+        0.30000000001566524
+      ],
+      "time_from_start_sec": 0.5
+    },
+    {
+      "positions": [
+        0.0539998956418568
+      ],
+      "velocities": [
+        0.18000479974073447
+      ],
+      "accelerations": [
+        0.3000000000043243
+      ],
+      "time_from_start_sec": 0.6000000000000001
+    },
+    {
+      "positions": [
+        0.07349984327830411
+      ],
+      "velocities": [
+        0.2101956032532829
+      ],
+      "accelerations": [
+        0.3000000000024092
+      ],
+      "time_from_start_sec": 0.7000000000000001
+    },
+    {
+      "positions": [
+        0.0959997836342831
+      ],
+      "velocities": [
+        0.2401704341935786
+      ],
+      "accelerations": [
+        0.2999999999922784
+      ],
+      "time_from_start_sec": 0.8
+    },
+    {
+      "positions": [
+        0.12149971461855366
+      ],
+      "velocities": [
+        0.2702646448932203
+      ],
+      "accelerations": [
+        0.29999999999885646
+      ],
+      "time_from_start_sec": 0.9
+    },
+    {
+      "positions": [
+        0.14999964162808035
+      ],
+      "velocities": [
+        0.3002329732301467
+      ],
+      "accelerations": [
+        0.2999999999407585
+      ],
+      "time_from_start_sec": 1.0
+    },
+    {
+      "positions": [
+        0.18149955851854815
+      ],
+      "velocities": [
+        0.3301476612675746
+      ],
+      "accelerations": [
+        0.2999999999448663
+      ],
+      "time_from_start_sec": 1.1
+    },
+    {
+      "positions": [
+        0.21599946638061793
+      ],
+      "velocities": [
+        0.3602557103829363
+      ],
+      "accelerations": [
+        0.29999999993059995
+      ],
+      "time_from_start_sec": 1.2
+    },
+    {
+      "positions": [
+        0.25347504868629794
+      ],
+      "velocities": [
+        0.3843000000000752
+      ],
+      "accelerations": [
+        -0.2999999999238387
+      ],
+      "time_from_start_sec": 1.3
+    },
+    {
+      "positions": [
+        0.29043476407632934
+      ],
+      "velocities": [
+        0.3543000000000722
+      ],
+      "accelerations": [
+        -0.2999999999304445
+      ],
+      "time_from_start_sec": 1.4
+    },
+    {
+      "positions": [
+        0.3243944794663609
+      ],
+      "velocities": [
+        0.32430000000007303
+      ],
+      "accelerations": [
+        -0.2999999999295008
+      ],
+      "time_from_start_sec": 1.5
+    },
+    {
+      "positions": [
+        0.3553541948563924
+      ],
+      "velocities": [
+        0.29429999999999545
+      ],
+      "accelerations": [
+        -0.30000000000682786
+      ],
+      "time_from_start_sec": 1.6
+    },
+    {
+      "positions": [
+        0.3833139102464238
+      ],
+      "velocities": [
+        0.2642999999999575
+      ],
+      "accelerations": [
+        -0.3000000000443978
+      ],
+      "time_from_start_sec": 1.7000000000000002
+    },
+    {
+      "positions": [
+        0.4082736256364552
+      ],
+      "velocities": [
+        0.2342999999999974
+      ],
+      "accelerations": [
+        -0.3000000000043021
+      ],
+      "time_from_start_sec": 1.8
+    },
+    {
+      "positions": [
+        0.43023334102648647
+      ],
+      "velocities": [
+        0.20429999999998608
+      ],
+      "accelerations": [
+        -0.3000000000152822
+      ],
+      "time_from_start_sec": 1.9
+    },
+    {
+      "positions": [
+        0.44919305641651774
+      ],
+      "velocities": [
+        0.17430000000007673
+      ],
+      "accelerations": [
+        -0.2999999999244604
+      ],
+      "time_from_start_sec": 2.0
+    },
+    {
+      "positions": [
+        0.4651527718065489
+      ],
+      "velocities": [
+        0.14429999999995044
+      ],
+      "accelerations": [
+        -0.3000000000502709
+      ],
+      "time_from_start_sec": 2.1
+    },
+    {
+      "positions": [
+        0.4781124871965798
+      ],
+      "velocities": [
+        0.11430000000000122
+      ],
+      "accelerations": [
+        -0.29999999999934773
+      ],
+      "time_from_start_sec": 2.2
+    },
+    {
+      "positions": [
+        0.48807220258661105
+      ],
+      "velocities": [
+        0.08430000000000566
+      ],
+      "accelerations": [
+        -0.2999999999944822
+      ],
+      "time_from_start_sec": 2.3
+    },
+    {
+      "positions": [
+        0.4950319179766425
+      ],
+      "velocities": [
+        0.054300000000003124
+      ],
+      "accelerations": [
+        -0.2999999999968775
+      ],
+      "time_from_start_sec": 2.4
+    },
+    {
+      "positions": [
+        0.49899163336667374
+      ],
+      "velocities": [
+        0.024299999999995412
+      ],
+      "accelerations": [
+        -0.3000000000040884
+      ],
+      "time_from_start_sec": 2.5
+    },
+    {
+      "positions": [
+        0.4999999999999999
+      ],
+      "velocities": [
+        -3.1432515042009164e-17
+      ],
+      "accelerations": [
+        -0.2999999999619616
+      ],
+      "time_from_start_sec": 2.581990513
+    }
+  ]
+}

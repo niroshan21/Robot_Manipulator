@@ -3,7 +3,9 @@ planning_pipelines:
 
 plan_request_params:
   planning_id: ompl
-  planning_attempts: 1
+  planning_attempts: 5
   planning_pipeline: ompl
-  max_velocity_scaling_factor: 1.0
-  max_acceleration_scaling_factor: 1.0
+  planning_time: 10.0
+  max_velocity_scaling_factor: 0.3
+  max_acceleration_scaling_factor: 0.3
+  smoothing_type: time_optimal

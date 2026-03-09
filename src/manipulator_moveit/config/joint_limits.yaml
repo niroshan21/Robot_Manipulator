@@ -1,5 +1,5 @@
-default_velocity_scaling_factor: 0.1
-default_acceleration_scaling_factor: 0.1
+default_velocity_scaling_factor: 0.05
+default_acceleration_scaling_factor: 0.05
 
 # Joint limits for each joint in the manipulator
 joint_limits:

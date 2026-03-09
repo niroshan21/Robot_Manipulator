@@ -1,0 +1,31 @@
+{
+  "name": "task_1_arm_trajectory",
+  "timestamp": "2026-02-19T06:33:04.142317",
+  "planning_group": "arm",
+  "planner_id": "OMPL",
+  "joint_names": [
+    "joint_1",
+    "joint_2",
+    "joint_3"
+  ],
+  "points": [
+    {
+      "positions": [
+        -1.1399999999999997,
+        0.9999999999999998,
+        0.7
+      ],
+      "velocities": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "accelerations": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "time_from_start_sec": 0.0
+    }
+  ]
+}
