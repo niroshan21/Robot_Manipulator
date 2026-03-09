@@ -14,22 +14,75 @@ find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(SERIAL libserial)
 
-add_library(${PROJECT_NAME} SHARED 
+# Arduino Serial version (legacy - keep for reference/fallback)
+add_library(${PROJECT_NAME}_serial SHARED 
   src/manipulator_interface.cpp
 )
-target_include_directories(${PROJECT_NAME} PRIVATE
+target_include_directories(${PROJECT_NAME}_serial PRIVATE
   include
   "${SERIAL_INCLUDE_DIRS}"
 )
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME}_serial
   "${SERIAL_LDFLAGS}"
 )
-ament_target_dependencies(${PROJECT_NAME}
+ament_target_dependencies(${PROJECT_NAME}_serial
   hardware_interface
   pluginlib
   rclcpp_lifecycle
   rclcpp
 )
+
+# Check if pigpio library is available (required for Raspberry Pi GPIO)
+find_library(PIGPIO_LIB pigpio)
+find_library(PIGPIOD_IF2_LIB pigpiod_if2)
+
+if(PIGPIO_LIB AND PIGPIOD_IF2_LIB)
+  message(STATUS "pigpio libraries found - building GPIO interface")
+  
+  # Raspberry Pi GPIO version (new default)
+  add_library(${PROJECT_NAME} SHARED 
+    src/manipulator_interface_gpio.cpp
+  )
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    include
+  )
+  target_link_libraries(${PROJECT_NAME}
+    pigpio
+    pigpiod_if2
+  )
+  ament_target_dependencies(${PROJECT_NAME}
+    hardware_interface
+    pluginlib
+    rclcpp_lifecycle
+    rclcpp
+  )
+  
+  set(GPIO_BUILD_ENABLED TRUE)
+else()
+  message(WARNING "pigpio library not found - GPIO interface will not be built")
+  message(WARNING "Install pigpio on Raspberry Pi with: sudo apt-get install pigpio")
+  message(STATUS "Building serial interface as default")
+  
+  # Use serial version as main library if pigpio not available
+  add_library(${PROJECT_NAME} SHARED 
+    src/manipulator_interface.cpp
+  )
+  target_include_directories(${PROJECT_NAME} PRIVATE
+    include
+    "${SERIAL_INCLUDE_DIRS}"
+  )
+  target_link_libraries(${PROJECT_NAME}
+    "${SERIAL_LDFLAGS}"
+  )
+  ament_target_dependencies(${PROJECT_NAME}
+    hardware_interface
+    pluginlib
+    rclcpp_lifecycle
+    rclcpp
+  )
+  
+  set(GPIO_BUILD_ENABLED FALSE)
+endif()
 
 pluginlib_export_plugin_description_file(hardware_interface manipulator_controller_plugins.xml)
 
@@ -38,10 +91,18 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
-install(
-  TARGETS ${PROJECT_NAME}
-  DESTINATION lib
-)
+# Install libraries based on what was built
+if(GPIO_BUILD_ENABLED)
+  install(
+    TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_serial
+    DESTINATION lib
+  )
+else()
+  install(
+    TARGETS ${PROJECT_NAME}
+    DESTINATION lib
+  )
+endif()
 
 install(
   DIRECTORY include

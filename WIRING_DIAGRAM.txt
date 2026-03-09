@@ -1,0 +1,152 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    RASPBERRY PI GPIO WIRING DIAGRAM                         │
+│                     Robot Manipulator Servo Control                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│      Raspberry Pi (Top View)         │
+│  GPIO Pinout (40-pin header)         │
+│                                       │
+│    3V3  [1] [2]  5V                  │
+│  GPIO2  [3] [4]  5V                  │
+│  GPIO3  [5] [6]  GND  ◄──────────────┼─┐ Common Ground
+│  GPIO4  [7] [8]  GPIO14              │ │
+│    GND  [9] [10] GPIO15              │ │
+│ GPIO17 [11] [12] GPIO18              │ │
+│ GPIO27 [13] [14] GND                 │ │
+│ GPIO22 [15] [16] GPIO23              │ │
+│   3V3  [17] [18] GPIO24              │ │
+│ GPIO10 [19] [20] GND                 │ │
+│ GPIO9  [21] [22] GPIO25              │ │
+│   ...  [..] [..] ...                 │ │
+│                                       │ │
+└───┬────┬────┬────┬──────────────────┘ │
+    │    │    │    │                     │
+    ▼    ▼    ▼    ▼                     │
+   P11  P12  P13  P15                    │
+  GP17 GP18 GP27 GP22                    │
+    │    │    │    │                     │
+    │    │    │    │                     │
+    │    │    │    │                     │
+┌───┴────┴────┴────┴─────────────────────┴────────────────────────┐
+│                    SERVO CONNECTIONS                             │
+└──────────────────────────────────────────────────────────────────┘
+
+┌────────────────┐  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+│  BASE SERVO    │  │ SHOULDER SERVO │  │  ELBOW SERVO   │  │ GRIPPER SERVO  │
+│    (MG995)     │  │    (MG995)     │  │    (MG995)     │  │    (MG995)     │
+├────────────────┤  ├────────────────┤  ├────────────────┤  ├────────────────┤
+│                │  │                │  │                │  │                │
+│  [Signal] ◄────┼──┼─ GPIO 17       │  │                │  │                │
+│   (Orange)     │  │                │  │                │  │                │
+│                │  │  [Signal] ◄────┼──┼─ GPIO 18       │  │                │
+│                │  │   (Orange)     │  │                │  │                │
+│                │  │                │  │  [Signal] ◄────┼──┼─ GPIO 27       │
+│                │  │                │  │   (Orange)     │  │                │
+│                │  │                │  │                │  │  [Signal] ◄────┼─ GPIO 22
+│                │  │                │  │                │  │   (Orange)     │
+│                │  │                │  │                │  │                │
+│  [VCC] ────────┼──┼────────────────┼──┼────────────────┼──┼────────────────┼───┐
+│   (Red)        │  │   (Red)        │  │   (Red)        │  │   (Red)        │   │
+│                │  │                │  │                │  │                │   │
+│  [GND] ────────┼──┼────────────────┼──┼────────────────┼──┼────────────────┼───┼─┐
+│  (Brown/Black) │  │ (Brown/Black)  │  │ (Brown/Black)  │  │ (Brown/Black)  │   │ │
+│                │  │                │  │                │  │                │   │ │
+└────────────────┘  └────────────────┘  └────────────────┘  └────────────────┘   │ │
+                                                                                  │ │
+                                                                                  ▼ ▼
+┌─────────────────────────────────────────────────────────────────────────────────┴─┴─┐
+│                          EXTERNAL POWER SUPPLY                                      │
+│                            (5-6V DC, 2-3A Min)                                      │
+├─────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                      │
+│    [+] 5-6V ──────────────────────────────────────► All Servo VCC (Red wires)      │
+│                                                                                      │
+│    [-] GND ───────────────────────────────────────► Common Ground Rail ◄────────┐   │
+│                                                          ▲                       │   │
+│                                                          │                       │   │
+└──────────────────────────────────────────────────────────┼───────────────────────┼───┘
+                                                           │                       │
+                                      All Servo GND ───────┘                       │
+                                      (Brown/Black)                                │
+                                                                                   │
+                                      Raspberry Pi GND ────────────────────────────┘
+                                      (Pin 6, 9, 14, 20, etc.)
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              WIRING SUMMARY                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Connection Type │ From              │ To                │ Wire Color      │
+│  ────────────────┼───────────────────┼───────────────────┼────────────────  │
+│  Signal          │ Base Servo        │ GPIO 17 (Pin 11)  │ Orange/Yellow   │
+│  Signal          │ Shoulder Servo    │ GPIO 18 (Pin 12)  │ Orange/Yellow   │
+│  Signal          │ Elbow Servo       │ GPIO 27 (Pin 13)  │ Orange/Yellow   │
+│  Signal          │ Gripper Servo     │ GPIO 22 (Pin 15)  │ Orange/Yellow   │
+│  ────────────────┼───────────────────┼───────────────────┼────────────────  │
+│  Power           │ All Servos VCC    │ External PSU (+)  │ Red             │
+│  Ground          │ All Servos GND    │ Common Ground     │ Brown/Black     │
+│  Ground          │ Raspberry Pi      │ Common Ground     │ Any             │
+│  Ground          │ External PSU (-)  │ Common Ground     │ Black           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          ⚠️  CRITICAL WARNINGS  ⚠️                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  1. NEVER connect servo power (VCC) to Raspberry Pi 5V or 3V3 pins!       │
+│     This will draw too much current and damage your Pi!                    │
+│                                                                             │
+│  2. ALWAYS use an external power supply rated for at least 2-3A             │
+│                                                                             │
+│  3. ALWAYS connect all grounds together (Common Ground):                   │
+│     - Raspberry Pi GND                                                     │
+│     - All servo GND wires                                                  │
+│     - External power supply GND (-)                                        │
+│                                                                             │
+│  4. Only signal wires (orange/yellow) connect to GPIO pins                 │
+│                                                                             │
+│  5. Use appropriate wire gauge (22-24 AWG recommended)                     │
+│                                                                             │
+│  6. Double-check connections before powering on!                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                       GPIO PIN ALTERNATIVE OPTIONS                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  If you prefer different GPIO pins, these are also suitable for servos:    │
+│                                                                             │
+│    GPIO 17, 18, 27, 22 (default configuration)                             │
+│    GPIO 23, 24, 25     (alternatives)                                      │
+│    GPIO 12, 13         (hardware PWM capable - best performance)           │
+│                                                                             │
+│  To change: Edit src/manipulator_description/urdf/                         │
+│             manipulator_ros2_control.xacro                                 │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          POWER SUPPLY GUIDE                                 │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Recommended power supply specifications:                                  │
+│                                                                             │
+│    Voltage:  5V - 6V DC (5V typical for most servos)                       │
+│    Current:  2A minimum, 3A+ recommended                                   │
+│              (Each MG995 can draw up to 1A under load)                     │
+│    Type:     Regulated DC power supply or battery pack                     │
+│              (e.g., 4x AA batteries = 6V, or 5V wall adapter)              │
+│                                                                             │
+│  Options:                                                                  │
+│    • 5V 3A USB power adapter (with wires exposed)                          │
+│    • 6V battery pack (4x AA or AAA)                                        │
+│    • Bench power supply set to 5-6V                                        │
+│    • LM7805 voltage regulator from higher voltage source                   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+End of wiring diagram

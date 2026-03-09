@@ -19,11 +19,11 @@ class TrajectoryGenerator(Node):
     """
     ROS2 Node for generating smooth multi-waypoint trajectories
     
-    Generates a full trajectory through multiple waypoints:
-    - Start: [0, 0, 0, 0]
-    - Waypoint 1: [-1.14, 1.0, 0.7, 0]
-    - Waypoint 2: [1.57, 0.5, -0.5, 0]
-    - End: [0, 0, 0, 0]
+    Generates an oscillating trajectory with 7 waypoints:
+    - Start: [0, 0, 0, 0] (home position)
+    - Waypoint 1: [0, 0.5, 0.5, 0] (raise arm)
+    - Waypoint 2-6: Oscillate base between 1.5 rad (86°) and -1.2 rad (-69°)
+    - Continuous smooth motion through all waypoints
     """
     
     def __init__(self):
@@ -250,17 +250,20 @@ class TrajectoryGenerator(Node):
         self.get_logger().info("Starting Multi-Waypoint Trajectory Generation")
         
         # Define full trajectory waypoints (all 4 joints: j1, j2, j3, j4)
-        # Note: gripper [0.5, -0.5] means joint_4 = 0.5
+        # Format: [joint_1 (base), joint_2 (shoulder), joint_3 (elbow), joint_4 (gripper)]
         waypoints = [
-            [0.0, 0.0, 0.0, 0.0],           # Start position
-            [-1.14, 1.0, 0.7, 0.0],         # Waypoint 1 - gripper closed
-            [1.57, 0.5, -0.5, 0.5],         # Waypoint 2 - gripper half open
-            [0.0, 0.0, 0.0, 0.0]            # Return to start
+            [0.0, 0.0, 0.0, 0.0],     # 0: Home position (all joints at zero)
+            [0.0, 0.5, 0.5, 0.0],     # 1: Raise arm (shoulder & elbow ~29°), gripper closed
+            [1.5, 0.5, 0.5, 0.0],     # 2: Rotate base right (86°), arm raised
+            [-1.2, 0.5, 0.5, 0.0],    # 3: Rotate base left (-69°), arm raised
+            [1.5, 0.5, 0.5, 0.0],     # 4: Rotate base right (86°) again
+            [-1.2, 0.5, 0.5, 0.0],    # 5: Rotate base left (-69°) again
+            [1.5, 0.5, 0.5, 0.0]      # 6: End at right position (86°)
         ]
         
         # Stay durations at each waypoint (in seconds)
-        # Index corresponds to waypoint: 0 = no stay at start, 5 = stay 5 seconds at waypoint 1, etc.
-        stay_durations = [0.0, 5.0, 5.0, 0.0]  # Stay 5 seconds at waypoints 1 and 2
+        # Index corresponds to waypoint: stay_durations[0] = stay at waypoint 0, etc.
+        stay_durations = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # No stays - continuous motion through all waypoints
         
         self.get_logger().info("Trajectory waypoints:")
         for i, wp in enumerate(waypoints):

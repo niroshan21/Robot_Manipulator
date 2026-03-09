@@ -30,6 +30,7 @@ setup(
             'moveit_interface = python_scripts.moveit_interface:main',
             'simple_lifecycle_node = python_scripts.simple_lifecycle_node:main',
             'generate_trajectories = python_scripts.generate_trajectories:main',
+            'simple_trajectory_generator = python_scripts.simple_trajectory_generator:main',
         ],
     },
 )
