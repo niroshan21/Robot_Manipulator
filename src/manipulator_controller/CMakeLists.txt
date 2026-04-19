@@ -14,6 +14,8 @@ find_package(PkgConfig REQUIRED)
 
 pkg_check_modules(SERIAL libserial)
 
+set(SCSERVO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/SCServo)
+
 # Arduino Serial version (legacy - keep for reference/fallback)
 add_library(${PROJECT_NAME}_serial SHARED 
   src/manipulator_interface.cpp
@@ -26,6 +28,28 @@ target_link_libraries(${PROJECT_NAME}_serial
   "${SERIAL_LDFLAGS}"
 )
 ament_target_dependencies(${PROJECT_NAME}_serial
+  hardware_interface
+  pluginlib
+  rclcpp_lifecycle
+  rclcpp
+)
+
+# STS3215 serial interface (bridge-ready)
+add_library(${PROJECT_NAME}_sts3215 SHARED
+  src/manipulator_interface_sts3215.cpp
+  ${SCSERVO_DIR}/src/SCS.cpp
+  ${SCSERVO_DIR}/src/SCSerial.cpp
+  ${SCSERVO_DIR}/src/SMS_STS.cpp
+)
+target_include_directories(${PROJECT_NAME}_sts3215 PRIVATE
+  include
+  "${SERIAL_INCLUDE_DIRS}"
+  ${SCSERVO_DIR}/include
+)
+target_link_libraries(${PROJECT_NAME}_sts3215
+  "${SERIAL_LDFLAGS}"
+)
+ament_target_dependencies(${PROJECT_NAME}_sts3215
   hardware_interface
   pluginlib
   rclcpp_lifecycle
@@ -94,12 +118,12 @@ install(
 # Install libraries based on what was built
 if(GPIO_BUILD_ENABLED)
   install(
-    TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_serial
+    TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_serial ${PROJECT_NAME}_sts3215
     DESTINATION lib
   )
 else()
   install(
-    TARGETS ${PROJECT_NAME}
+    TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_sts3215
     DESTINATION lib
   )
 endif()
@@ -115,6 +139,7 @@ ament_export_include_directories(
 
 ament_export_libraries(
   ${PROJECT_NAME}
+  ${PROJECT_NAME}_sts3215
 )
 
 ament_export_dependencies(
