@@ -3,7 +3,7 @@
 # - Under this key you list controllers that the manager will try to load.
 controller_manager:
   ros__parameters:
-    update_rate: 10 # Increased from 10 to 1000 Hz for more responsive control
+    update_rate: 100 # Increased from 10 to 1000 Hz for more responsive control
 
     arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
