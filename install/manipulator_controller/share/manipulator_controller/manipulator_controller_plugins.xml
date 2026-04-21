@@ -19,3 +19,14 @@
       </description>
     </class>
 </library>
+<library path="manipulator_controller_sts3215">
+    <!-- STS3215 Serial Interface -->
+    <class name="manipulator_controller/ManipulatorInterfaceSTS3215"
+      type="manipulator_controller::ManipulatorInterfaceSTS3215"
+      base_class_type="hardware_interface::SystemInterface"
+    >
+      <description>
+        Manipulator Hardware Interface for STS3215 serial bus servos
+      </description>
+    </class>
+</library>

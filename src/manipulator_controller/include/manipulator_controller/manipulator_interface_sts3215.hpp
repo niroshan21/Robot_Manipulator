@@ -45,8 +45,8 @@ private:  // these can only be used inside the class itself
   void closePort();                 // Closes the serial port. Called in on_deactivate() and the destructor.
   bool readPresentPosition(uint8_t servo_id, uint16_t &out_position);   // Reads the current position of a servo by its ID. Returns true on success and fills out_position with the raw encoder value.
   bool writeGoalPosition(uint8_t servo_id, uint16_t position);          // Writes a target position to a servo by its ID. Returns true on success.
-  double rawToRadians(uint16_t raw, size_t joint_index) const;          // Converts a raw encoder value from the servo into radians, based on the joint limits specified in the URDF.
-  uint16_t radiansToRaw(double radians, size_t joint_index) const;      // Converts a target position in radians into a raw encoder value to send to the servo, based on the joint limits specified in the URDF.
+  double rawToRadians(uint16_t raw, size_t joint_index) const;          // Converts a raw encoder value from the servo into radians using the servo's global range.
+  uint16_t radiansToRaw(double radians, size_t joint_index) const;      // Converts a target position in radians into a raw encoder value using the servo's global range and joint limits for clamping.
   uint16_t clampRaw(int value) const;                                   // Clamps a raw encoder value to the valid range defined by position_raw_min_ and position_raw_max_.
   double clampRad(double value, double min_val, double max_val) const;  // Clamps a radian value to the valid range defined by min_val and max_val, which are typically the joint limits from the URDF.
 
@@ -62,6 +62,8 @@ private:  // these can only be used inside the class itself
   uint8_t present_position_addr_;   // The register address to read current positions from, e.g. 0x38. Loaded from URDF.
   uint16_t position_raw_min_;       // The minimum raw encoder value corresponding to the joint's minimum position. Loaded from URDF.
   uint16_t position_raw_max_;       // The maximum raw encoder value corresponding to the joint's maximum position. Loaded from URDF.
+  double position_rad_min_;         // The minimum servo angle (radians) corresponding to position_raw_min_. Loaded from URDF.
+  double position_rad_max_;         // The maximum servo angle (radians) corresponding to position_raw_max_. Loaded from URDF.
   uint16_t servo_speed_;            // Default move speed for WritePosEx (0 = use servo default).
   uint8_t servo_acceleration_;      // Default acceleration for WritePosEx (0 = use servo default).
 

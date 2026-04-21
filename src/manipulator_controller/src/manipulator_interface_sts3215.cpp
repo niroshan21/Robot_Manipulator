@@ -10,7 +10,42 @@
 
 #include <algorithm>    // Provides generic algorithms that work on containers and ranges. (std::clamp, std::min, std::max)
 #include <cmath>        // Math functions and constants. (For example, std::abs, std::sin, std::cos, std::tan, std::atan2, M_PI)
+#include <cctype>       // std::isspace
 #include <sstream>      // For string stream operations, which allow you to build strings from other data types in a convenient way. (std::stringstream)
+
+namespace
+{
+bool parseFiniteDouble(const std::string &text, double &out_value)
+{
+  if (text.empty())
+  {
+    return false;
+  }
+
+  try
+  {
+    size_t idx = 0;
+    double value = std::stod(text, &idx);
+
+    while (idx < text.size() && std::isspace(static_cast<unsigned char>(text[idx])))
+    {
+      ++idx;
+    }
+
+    if (idx != text.size() || !std::isfinite(value))
+    {
+      return false;
+    }
+
+    out_value = value;
+    return true;
+  }
+  catch (...)
+  {
+    return false;
+  }
+}
+}  // namespace
 
 namespace manipulator_controller
 {
@@ -27,6 +62,8 @@ ManipulatorInterfaceSTS3215::ManipulatorInterfaceSTS3215()
     present_position_addr_(0x38),
     position_raw_min_(0),
     position_raw_max_(4095),
+    position_rad_min_(-M_PI / 2.0),
+    position_rad_max_(M_PI / 2.0),
     servo_speed_(0),
     servo_acceleration_(0)
 {
@@ -119,6 +156,31 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
     position_raw_max_ = static_cast<uint16_t>(std::stoi(raw_max_it->second));
   }
 
+  double rad_min = position_rad_min_;
+  auto rad_min_it = info_.hardware_parameters.find("position_rad_min");
+  if (rad_min_it != info_.hardware_parameters.end())
+  {
+    parseFiniteDouble(rad_min_it->second, rad_min);
+  }
+
+  double rad_max = position_rad_max_;
+  auto rad_max_it = info_.hardware_parameters.find("position_rad_max");
+  if (rad_max_it != info_.hardware_parameters.end())
+  {
+    parseFiniteDouble(rad_max_it->second, rad_max);
+  }
+
+  if (rad_min < rad_max)
+  {
+    position_rad_min_ = rad_min;
+    position_rad_max_ = rad_max;
+  }
+  else
+  {
+    RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                "Invalid position_rad_min/max; using defaults.");
+  }
+
   auto speed_it = info_.hardware_parameters.find("servo_speed");
   if (speed_it != info_.hardware_parameters.end())
   {
@@ -142,13 +204,12 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
 // This function answers the question: "What data can controllers READ from this hardware?"
 // A StateInterface is a named pointer to a memory location inside the class.
 
-'''
-hardware_interface::StateInterface(
-    info_.joints[i].name,           // "joint_1"
-    hardware_interface::HW_IF_POSITION,  // "position"
-    &position_states_[i]            // pointer to the actual double value
-)
-'''
+// Example interface object:
+// hardware_interface::StateInterface(
+//     info_.joints[i].name,           // "joint_1"
+//     hardware_interface::HW_IF_POSITION,  // "position"
+//     &position_states_[i]            // pointer to the actual double value
+// )
 // "joint_1 → position → lives at memory address 0x7f3a..."
 std::vector<hardware_interface::StateInterface> ManipulatorInterfaceSTS3215::export_state_interfaces()
 {
@@ -275,23 +336,11 @@ hardware_interface::return_type ManipulatorInterfaceSTS3215::write(const rclcpp:
 // const at the end — this function promises not to modify any member variables. It's purely a calculation.
 double ManipulatorInterfaceSTS3215::rawToRadians(uint16_t raw, size_t joint_index) const
 {
-
-  //Set default limits of -90 to +90 degrees (±π/2 radians) in case the URDF doesn't specify them.
-  double min_rad = -M_PI / 2.0;
-  double max_rad = M_PI / 2.0;
-
-  // info_.joints — the list of joints loaded from your manipulator_ros2_control.xacro
-  if (joint_index < info_.joints.size() && !info_.joints[joint_index].command_interfaces.empty())
+  (void)joint_index;
+  if (position_raw_max_ <= position_raw_min_ || position_rad_max_ <= position_rad_min_)
   {
-    const auto &cmd = info_.joints[joint_index].command_interfaces[0];   // auto = "figure out the type automatically"
-    if (std::isfinite(cmd.min) && std::isfinite(cmd.max) && cmd.min < cmd.max)
-    {
-      // replaces the defaults with the real limits from our config.
-      min_rad = cmd.min;
-      max_rad = cmd.max;
-    }
+    return position_rad_min_;
   }
-
   double ratio = 0.0;
   if (position_raw_max_ > position_raw_min_)
   {
@@ -299,26 +348,38 @@ double ManipulatorInterfaceSTS3215::rawToRadians(uint16_t raw, size_t joint_inde
             static_cast<double>(position_raw_max_ - position_raw_min_);
   }
 
-  return min_rad + ratio * (max_rad - min_rad);
+  return position_rad_min_ + ratio * (position_rad_max_ - position_rad_min_);
 }
 
 uint16_t ManipulatorInterfaceSTS3215::radiansToRaw(double radians, size_t joint_index) const
 {
-  double min_rad = -M_PI / 2.0;
-  double max_rad = M_PI / 2.0;
+  if (position_rad_max_ <= position_rad_min_)
+  {
+    return clampRaw(position_raw_min_);
+  }
+
+  double limit_min = position_rad_min_;
+  double limit_max = position_rad_max_;
 
   if (joint_index < info_.joints.size() && !info_.joints[joint_index].command_interfaces.empty())
   {
     const auto &cmd = info_.joints[joint_index].command_interfaces[0];
-    if (std::isfinite(cmd.min) && std::isfinite(cmd.max) && cmd.min < cmd.max)
+    double cmd_min = 0.0;
+    double cmd_max = 0.0;
+    if (parseFiniteDouble(cmd.min, cmd_min) && parseFiniteDouble(cmd.max, cmd_max) && cmd_min < cmd_max)
     {
-      min_rad = cmd.min;
-      max_rad = cmd.max;
+      limit_min = std::max(cmd_min, position_rad_min_);
+      limit_max = std::min(cmd_max, position_rad_max_);
+      if (limit_min >= limit_max)
+      {
+        limit_min = position_rad_min_;
+        limit_max = position_rad_max_;
+      }
     }
   }
 
-  double clamped = clampRad(radians, min_rad, max_rad);
-  double ratio = (clamped - min_rad) / (max_rad - min_rad);
+  double clamped = clampRad(radians, limit_min, limit_max);
+  double ratio = (clamped - position_rad_min_) / (position_rad_max_ - position_rad_min_);
   int raw = static_cast<int>(std::lround(position_raw_min_ +
                                          ratio * (position_raw_max_ - position_raw_min_)));
   return clampRaw(raw);

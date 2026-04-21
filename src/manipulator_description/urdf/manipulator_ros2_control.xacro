@@ -31,7 +31,7 @@
             <hardware>
                 <plugin>manipulator_controller/ManipulatorInterfaceSTS3215</plugin>
                 <!-- STS3215 setup via external serial bridge/controller -->
-                <param name="port">/dev/ttyUSB0</param> <!-- USB device where the URT‑2 adapter shows up. -->
+                <param name="port">/dev/ttyACM0</param> <!-- USB device where the URT‑2 adapter shows up. -->
                 <param name="baudrate">1000000</param>  <!--serial speed for the bus (1Mbps for STS3215)-->
                 <param name="servo_ids">1,2,3,4</param>
 
@@ -42,6 +42,10 @@
                 <!-- Raw encoder range for STS3215 position -->
                 <param name="position_raw_min">0</param> 
                 <param name="position_raw_max">4095</param>
+
+                <!-- Servo angle range that maps to raw min/max -->
+                <param name="position_rad_min">-1.57</param>
+                <param name="position_rad_max">1.57</param>
 
                 <!-- Default STS3215 motion profile -->
                 <param name="servo_speed">1000</param>

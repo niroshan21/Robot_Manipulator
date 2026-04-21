@@ -29,13 +29,30 @@
 
         <xacro:unless value="${is_sim}">
             <hardware>
-                <plugin>manipulator_controller/ManipulatorInterfaceGPIO</plugin>
-                <!-- GPIO pin assignments for Raspberry Pi -->
-                <!-- Default pins - adjust based on your wiring -->
-                <param name="gpio_base">17</param>      <!-- GPIO 17 for base servo -->
-                <param name="gpio_shoulder">18</param>  <!-- GPIO 18 for shoulder servo -->
-                <param name="gpio_elbow">27</param>     <!-- GPIO 27 for elbow servo -->
-                <param name="gpio_gripper">22</param>   <!-- GPIO 22 for gripper servo -->
+                <plugin>manipulator_controller/ManipulatorInterfaceSTS3215</plugin>
+                <!-- STS3215 setup via external serial bridge/controller -->
+                <param name="port">/dev/ttyACM0</param> <!-- USB device where the URT‑2 adapter shows up. -->
+                <param name="baudrate">1000000</param>  <!--serial speed for the bus (1Mbps for STS3215)-->
+                <param name="servo_ids">1,2,3,4</param>
+
+                <!-- STS3215 register map (override if your firmware differs) -->
+                <param name="goal_position_addr">0x2A</param> <!-- register address to write a target position. -->
+                <param name="present_position_addr">0x38</param>  <!-- register address to read the actual position (feedback). -->
+
+                <!-- Raw encoder range for STS3215 position -->
+                <param name="position_raw_min">0</param> 
+                <param name="position_raw_max">4095</param>
+
+                <!-- Servo angle range that maps to raw min/max -->
+                <param name="position_rad_min">-1.57</param>
+                <param name="position_rad_max">1.57</param>
+
+                <!-- Default STS3215 motion profile -->
+                <param name="servo_speed">1000</param>
+                <param name="servo_acceleration">50</param>
+
+                <!-- Set true when firmware publishes measured servo position feedback -->
+                <param name="feedback_from_hardware">true</param>
             </hardware>
         </xacro:unless>
 
