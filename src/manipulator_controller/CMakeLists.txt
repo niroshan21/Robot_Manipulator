@@ -49,6 +49,11 @@ target_include_directories(${PROJECT_NAME}_sts3215 PRIVATE
 target_link_libraries(${PROJECT_NAME}_sts3215
   "${SERIAL_LDFLAGS}"
 )
+if(PIGPIOD_IF2_LIB)
+  target_link_libraries(${PROJECT_NAME}_sts3215
+    pigpiod_if2
+  )
+endif()
 ament_target_dependencies(${PROJECT_NAME}_sts3215
   hardware_interface
   pluginlib
