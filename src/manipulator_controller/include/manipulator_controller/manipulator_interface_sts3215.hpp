@@ -7,6 +7,8 @@
 #include <rclcpp_lifecycle/state.hpp>
 #include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp> //handles the lifecycle state machine (init → activate → deactivate)
 #include <cstdint>     // for fixed-width integer types like uint8_t, uint16_t
+#include <cstddef>
+#include <cmath>
 
 #include <string>
 #include <vector>
@@ -49,6 +51,7 @@ private:  // these can only be used inside the class itself
   uint16_t radiansToRaw(double radians, size_t joint_index) const;      // Converts a target position in radians into a raw encoder value using the servo's global range and joint limits for clamping.
   uint16_t clampRaw(int value) const;                                   // Clamps a raw encoder value to the valid range defined by position_raw_min_ and position_raw_max_.
   double clampRad(double value, double min_val, double max_val) const;  // Clamps a radian value to the valid range defined by min_val and max_val, which are typically the joint limits from the URDF.
+  int angleToPulseWidth(double angle, double min_angle = 0.0, double max_angle = M_PI);
 
   bool serial_open_;                // Whether the serial port is currently open.
   std::string port_;                // The name of the serial port to use, e.g. "/dev/ttyUSB0". Loaded from URDF.
@@ -71,6 +74,16 @@ private:  // these can only be used inside the class itself
   std::vector<double> position_commands_;       // The target positions for each joint, in radians. This is what the controller writes to, and write() sends these to the servos.
   std::vector<double> prev_position_commands_;  // The target positions from the previous control cycle, used to check if we need to send new commands.
   std::vector<double> position_states_;         // The current positions of each joint, in radians, as read from the servos. This is what the controller reads from, and read() updates these values based on feedback from the hardware (or mirrors the commands if feedback is disabled).
+
+  size_t sts_joint_count_;
+
+  bool gpio_initialized_;
+  int gpio_gripper_pin_;
+  int pi_;
+
+  static constexpr int PWM_MIN = 500;
+  static constexpr int PWM_MAX = 2500;
+  static constexpr int PWM_CENTER = 1500;
 };
 
 }  // namespace manipulator_controller
