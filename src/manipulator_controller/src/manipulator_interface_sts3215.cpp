@@ -423,11 +423,20 @@ double ManipulatorInterfaceSTS3215::rawToRadians(uint16_t raw, size_t joint_inde
             static_cast<double>(position_raw_max_ - position_raw_min_);
   }
 
-  return position_rad_min_ + ratio * (position_rad_max_ - position_rad_min_);
+  double radians = position_rad_min_ + ratio * (position_rad_max_ - position_rad_min_);
+  if (joint_index == 2)
+  {
+    radians = -radians;
+  }
+  return radians;
 }
 
 uint16_t ManipulatorInterfaceSTS3215::radiansToRaw(double radians, size_t joint_index) const
 {
+  if (joint_index == 2)
+  {
+    radians = -radians;
+  }
   if (position_rad_max_ <= position_rad_min_)
   {
     return clampRaw(position_raw_min_);
