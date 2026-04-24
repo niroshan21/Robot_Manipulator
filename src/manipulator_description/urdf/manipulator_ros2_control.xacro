@@ -52,6 +52,15 @@
                 <param name="servo_speed">1000</param>
                 <param name="servo_acceleration">50</param>
 
+                <!-- STS3215 tuning defaults -->
+                <param name="tuning_enable">true</param>
+                <param name="position_p_gain">32</param>
+                <param name="position_d_gain">32</param>
+                <param name="position_i_gain">0</param>
+                <param name="deadband_cw">1</param>
+                <param name="deadband_ccw">1</param>
+                <param name="punch">16</param>
+
                 <!-- Set true when firmware publishes measured servo position feedback -->
                 <param name="feedback_from_hardware">true</param>
             </hardware>

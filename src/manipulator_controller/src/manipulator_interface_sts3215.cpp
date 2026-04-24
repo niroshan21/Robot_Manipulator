@@ -67,6 +67,19 @@ ManipulatorInterfaceSTS3215::ManipulatorInterfaceSTS3215()
     position_rad_max_(M_PI / 2.0),
     servo_speed_(0),
     servo_acceleration_(0),
+    tuning_enable_(false),
+    has_position_p_gain_(false),
+    has_position_d_gain_(false),
+    has_position_i_gain_(false),
+    has_deadband_cw_(false),
+    has_deadband_ccw_(false),
+    has_punch_(false),
+    position_p_gain_(0),
+    position_d_gain_(0),
+    position_i_gain_(0),
+    deadband_cw_(0),
+    deadband_ccw_(0),
+    punch_(0),
     sts_joint_count_(0),
     gpio_initialized_(false),
     gpio_gripper_pin_(22),
@@ -225,6 +238,38 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
     servo_acceleration_ = static_cast<uint8_t>(std::stoi(acc_it->second));
   }
 
+  auto tuning_it = info_.hardware_parameters.find("tuning_enable");
+  if (tuning_it != info_.hardware_parameters.end())
+  {
+    tuning_enable_ = (tuning_it->second == "true");
+  }
+
+  auto read_tuning_param = [&](const char *key, int &value, bool &has_value)
+  {
+    auto it = info_.hardware_parameters.find(key);
+    if (it == info_.hardware_parameters.end())
+    {
+      return;
+    }
+    try
+    {
+      value = std::stoi(it->second);
+      has_value = true;
+    }
+    catch (...)
+    {
+      RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                  "Invalid %s value '%s'", key, it->second.c_str());
+    }
+  };
+
+  read_tuning_param("position_p_gain", position_p_gain_, has_position_p_gain_);
+  read_tuning_param("position_d_gain", position_d_gain_, has_position_d_gain_);
+  read_tuning_param("position_i_gain", position_i_gain_, has_position_i_gain_);
+  read_tuning_param("deadband_cw", deadband_cw_, has_deadband_cw_);
+  read_tuning_param("deadband_ccw", deadband_ccw_, has_deadband_ccw_);
+  read_tuning_param("punch", punch_, has_punch_);
+
   position_commands_.reserve(info_.joints.size());    // Reserve memory for the position command. position_commands = the vector of target positions that the controller will write to. 
   position_states_.reserve(info_.joints.size());      // position_states = the vector of current positions that the controller will read from the hardware.
   prev_position_commands_.reserve(info_.joints.size()); // prev_position_commands = a copy of the last commands we sent, used to check if the command has changed before writing to the hardware.
@@ -282,6 +327,13 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_activate(const rclcpp_lifecycle::
   {
     RCLCPP_FATAL_STREAM(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
                         "Failed to open serial port " << port_);
+    return CallbackReturn::FAILURE;
+  }
+
+  if (tuning_enable_ && !applyServoTuning())
+  {
+    RCLCPP_ERROR(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                 "Servo tuning failed; check tuning parameters and wiring.");
     return CallbackReturn::FAILURE;
   }
 
@@ -546,6 +598,73 @@ bool ManipulatorInterfaceSTS3215::writeGoalPosition(uint8_t servo_id, uint16_t p
   return scs_.WritePosEx(servo_id, static_cast<int>(position), servo_speed_, servo_acceleration_) == 1;
          //               │          │                         │  │
          //               ID         target position       speed  acceleration
+}
+
+bool ManipulatorInterfaceSTS3215::applyServoTuning()
+{
+  if (!serial_open_)
+  {
+    return false;
+  }
+
+  bool ok = true;
+  size_t count = std::min(servo_ids_.size(), sts_joint_count_);
+  for (size_t i = 0; i < count; ++i)
+  {
+    uint8_t id = static_cast<uint8_t>(servo_ids_[i]);
+    if (!scs_.unLockEeprom(id))
+    {
+      RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                  "Failed to unlock EEPROM for servo %u", id);
+      ok = false;
+      continue;
+    }
+
+    auto write_byte = [&](uint8_t addr, int value)
+    {
+      uint8_t clamped = static_cast<uint8_t>(std::clamp(value, 0, 255));
+      if (!scs_.writeByte(id, addr, clamped))
+      {
+        RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                    "Failed to write addr %u for servo %u", addr, id);
+        ok = false;
+      }
+    };
+
+    if (has_position_p_gain_)
+    {
+      write_byte(STS_POS_P_GAIN_ADDR, position_p_gain_);
+    }
+    if (has_position_d_gain_)
+    {
+      write_byte(STS_POS_D_GAIN_ADDR, position_d_gain_);
+    }
+    if (has_position_i_gain_)
+    {
+      write_byte(STS_POS_I_GAIN_ADDR, position_i_gain_);
+    }
+    if (has_punch_)
+    {
+      write_byte(STS_PUNCH_ADDR, punch_);
+    }
+    if (has_deadband_cw_)
+    {
+      write_byte(STS_CW_DEADBAND_ADDR, deadband_cw_);
+    }
+    if (has_deadband_ccw_)
+    {
+      write_byte(STS_CCW_DEADBAND_ADDR, deadband_ccw_);
+    }
+
+    if (!scs_.LockEeprom(id))
+    {
+      RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                  "Failed to lock EEPROM for servo %u", id);
+      ok = false;
+    }
+  }
+
+  return ok;
 }
 
 uint16_t ManipulatorInterfaceSTS3215::clampRaw(int value) const

@@ -47,6 +47,7 @@ private:  // these can only be used inside the class itself
   void closePort();                 // Closes the serial port. Called in on_deactivate() and the destructor.
   bool readPresentPosition(uint8_t servo_id, uint16_t &out_position);   // Reads the current position of a servo by its ID. Returns true on success and fills out_position with the raw encoder value.
   bool writeGoalPosition(uint8_t servo_id, uint16_t position);          // Writes a target position to a servo by its ID. Returns true on success.
+  bool applyServoTuning();
   double rawToRadians(uint16_t raw, size_t joint_index) const;          // Converts a raw encoder value from the servo into radians using the servo's global range.
   uint16_t radiansToRaw(double radians, size_t joint_index) const;      // Converts a target position in radians into a raw encoder value using the servo's global range and joint limits for clamping.
   uint16_t clampRaw(int value) const;                                   // Clamps a raw encoder value to the valid range defined by position_raw_min_ and position_raw_max_.
@@ -70,6 +71,20 @@ private:  // these can only be used inside the class itself
   uint16_t servo_speed_;            // Default move speed for WritePosEx (0 = use servo default).
   uint8_t servo_acceleration_;      // Default acceleration for WritePosEx (0 = use servo default).
 
+  bool tuning_enable_;
+  bool has_position_p_gain_;
+  bool has_position_d_gain_;
+  bool has_position_i_gain_;
+  bool has_deadband_cw_;
+  bool has_deadband_ccw_;
+  bool has_punch_;
+  int position_p_gain_;
+  int position_d_gain_;
+  int position_i_gain_;
+  int deadband_cw_;
+  int deadband_ccw_;
+  int punch_;
+
   std::vector<int> servo_ids_;      // The list of servo IDs to control, e.g. [1, 2, 3, 4]. Loaded from URDF.
   std::vector<double> position_commands_;       // The target positions for each joint, in radians. This is what the controller writes to, and write() sends these to the servos.
   std::vector<double> prev_position_commands_;  // The target positions from the previous control cycle, used to check if we need to send new commands.
@@ -84,6 +99,13 @@ private:  // these can only be used inside the class itself
   static constexpr int PWM_MIN = 500;
   static constexpr int PWM_MAX = 2500;
   static constexpr int PWM_CENTER = 1500;
+
+  static constexpr uint8_t STS_POS_P_GAIN_ADDR = 21;
+  static constexpr uint8_t STS_POS_D_GAIN_ADDR = 22;
+  static constexpr uint8_t STS_POS_I_GAIN_ADDR = 23;
+  static constexpr uint8_t STS_PUNCH_ADDR = 24;
+  static constexpr uint8_t STS_CW_DEADBAND_ADDR = 26;
+  static constexpr uint8_t STS_CCW_DEADBAND_ADDR = 27;
 };
 
 }  // namespace manipulator_controller
