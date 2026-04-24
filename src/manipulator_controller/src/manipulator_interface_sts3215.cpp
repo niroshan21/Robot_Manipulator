@@ -664,6 +664,12 @@ bool ManipulatorInterfaceSTS3215::applyServoTuning()
     }
   }
 
+  if (ok)
+  {
+    RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                "Servo tuning parameters written successfully.");
+  }
+
   return ok;
 }
 
