@@ -162,6 +162,19 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
     loadServoIds("", sts_joint_count_);
   }
 
+  has_position_p_gain_per_servo_.assign(sts_joint_count_, false);
+  has_position_d_gain_per_servo_.assign(sts_joint_count_, false);
+  has_position_i_gain_per_servo_.assign(sts_joint_count_, false);
+  has_deadband_cw_per_servo_.assign(sts_joint_count_, false);
+  has_deadband_ccw_per_servo_.assign(sts_joint_count_, false);
+  has_punch_per_servo_.assign(sts_joint_count_, false);
+  position_p_gain_per_servo_.assign(sts_joint_count_, 0);
+  position_d_gain_per_servo_.assign(sts_joint_count_, 0);
+  position_i_gain_per_servo_.assign(sts_joint_count_, 0);
+  deadband_cw_per_servo_.assign(sts_joint_count_, 0);
+  deadband_ccw_per_servo_.assign(sts_joint_count_, 0);
+  punch_per_servo_.assign(sts_joint_count_, 0);
+
   auto gripper_pin_it = info_.hardware_parameters.find("gpio_gripper");
   if (gripper_pin_it != info_.hardware_parameters.end())
   {
@@ -269,6 +282,37 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
   read_tuning_param("deadband_cw", deadband_cw_, has_deadband_cw_);
   read_tuning_param("deadband_ccw", deadband_ccw_, has_deadband_ccw_);
   read_tuning_param("punch", punch_, has_punch_);
+
+  auto read_tuning_param_per_servo = [&](const char *base_key, std::vector<int> &values,
+                                         std::vector<bool> &has_values)
+  {
+    for (size_t i = 0; i < sts_joint_count_; ++i)
+    {
+      std::string key = std::string(base_key) + "_" + std::to_string(i + 1);
+      auto it = info_.hardware_parameters.find(key);
+      if (it == info_.hardware_parameters.end())
+      {
+        continue;
+      }
+      try
+      {
+        values[i] = std::stoi(it->second);
+        has_values[i] = true;
+      }
+      catch (...)
+      {
+        RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                    "Invalid %s value '%s'", key.c_str(), it->second.c_str());
+      }
+    }
+  };
+
+  read_tuning_param_per_servo("position_p_gain", position_p_gain_per_servo_, has_position_p_gain_per_servo_);
+  read_tuning_param_per_servo("position_d_gain", position_d_gain_per_servo_, has_position_d_gain_per_servo_);
+  read_tuning_param_per_servo("position_i_gain", position_i_gain_per_servo_, has_position_i_gain_per_servo_);
+  read_tuning_param_per_servo("deadband_cw", deadband_cw_per_servo_, has_deadband_cw_per_servo_);
+  read_tuning_param_per_servo("deadband_ccw", deadband_ccw_per_servo_, has_deadband_ccw_per_servo_);
+  read_tuning_param_per_servo("punch", punch_per_servo_, has_punch_per_servo_);
 
   position_commands_.reserve(info_.joints.size());    // Reserve memory for the position command. position_commands = the vector of target positions that the controller will write to. 
   position_states_.reserve(info_.joints.size());      // position_states = the vector of current positions that the controller will read from the hardware.
@@ -612,10 +656,12 @@ bool ManipulatorInterfaceSTS3215::applyServoTuning()
   for (size_t i = 0; i < count; ++i)
   {
     uint8_t id = static_cast<uint8_t>(servo_ids_[i]);
+    bool servo_ok = true;
     if (!scs_.unLockEeprom(id))
     {
       RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
                   "Failed to unlock EEPROM for servo %u", id);
+      servo_ok = false;
       ok = false;
       continue;
     }
@@ -627,40 +673,124 @@ bool ManipulatorInterfaceSTS3215::applyServoTuning()
       {
         RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
                     "Failed to write addr %u for servo %u", addr, id);
+        servo_ok = false;
         ok = false;
+      }
+      else
+      {
+        RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                    "Wrote addr %u value %u to servo %u", addr, clamped, id);
       }
     };
 
-    if (has_position_p_gain_)
+    auto get_value = [&](const std::vector<bool> &has_values, const std::vector<int> &values,
+                         bool has_global, int global_value, int &out_value) -> bool
     {
-      write_byte(STS_POS_P_GAIN_ADDR, position_p_gain_);
+      if (i < has_values.size() && has_values[i])
+      {
+        out_value = values[i];
+        return true;
+      }
+      if (has_global)
+      {
+        out_value = global_value;
+        return true;
+      }
+      return false;
+    };
+
+    int value = 0;
+    bool has_p = get_value(has_position_p_gain_per_servo_, position_p_gain_per_servo_,
+                           has_position_p_gain_, position_p_gain_, value);
+    int p_value = value;
+    if (has_p)
+    {
+      write_byte(STS_POS_P_GAIN_ADDR, value);
     }
-    if (has_position_d_gain_)
+
+    bool has_d = get_value(has_position_d_gain_per_servo_, position_d_gain_per_servo_,
+                           has_position_d_gain_, position_d_gain_, value);
+    int d_value = value;
+    if (has_d)
     {
-      write_byte(STS_POS_D_GAIN_ADDR, position_d_gain_);
+      write_byte(STS_POS_D_GAIN_ADDR, value);
     }
-    if (has_position_i_gain_)
+
+    bool has_i = get_value(has_position_i_gain_per_servo_, position_i_gain_per_servo_,
+                           has_position_i_gain_, position_i_gain_, value);
+    int i_value = value;
+    if (has_i)
     {
-      write_byte(STS_POS_I_GAIN_ADDR, position_i_gain_);
+      write_byte(STS_POS_I_GAIN_ADDR, value);
     }
-    if (has_punch_)
+
+    bool has_punch = get_value(has_punch_per_servo_, punch_per_servo_,
+                               has_punch_, punch_, value);
+    int punch_value = value;
+    if (has_punch)
     {
-      write_byte(STS_PUNCH_ADDR, punch_);
+      write_byte(STS_PUNCH_ADDR, value);
     }
-    if (has_deadband_cw_)
+
+    bool has_cw = get_value(has_deadband_cw_per_servo_, deadband_cw_per_servo_,
+                            has_deadband_cw_, deadband_cw_, value);
+    int cw_value = value;
+    if (has_cw)
     {
-      write_byte(STS_CW_DEADBAND_ADDR, deadband_cw_);
+      write_byte(STS_CW_DEADBAND_ADDR, value);
     }
-    if (has_deadband_ccw_)
+
+    bool has_ccw = get_value(has_deadband_ccw_per_servo_, deadband_ccw_per_servo_,
+                             has_deadband_ccw_, deadband_ccw_, value);
+    int ccw_value = value;
+    if (has_ccw)
     {
-      write_byte(STS_CCW_DEADBAND_ADDR, deadband_ccw_);
+      write_byte(STS_CCW_DEADBAND_ADDR, value);
+    }
+
+    if (has_p || has_d || has_i || has_punch || has_cw || has_ccw)
+    {
+      std::ostringstream log_line;
+      log_line << "Servo " << static_cast<unsigned>(id) << " tuning: ";
+      if (has_p)
+      {
+        log_line << "P=" << p_value << " ";
+      }
+      if (has_d)
+      {
+        log_line << "D=" << d_value << " ";
+      }
+      if (has_i)
+      {
+        log_line << "I=" << i_value << " ";
+      }
+      if (has_cw)
+      {
+        log_line << "CW=" << cw_value << " ";
+      }
+      if (has_ccw)
+      {
+        log_line << "CCW=" << ccw_value << " ";
+      }
+      if (has_punch)
+      {
+        log_line << "Punch=" << punch_value;
+      }
+      RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"), "%s", log_line.str().c_str());
     }
 
     if (!scs_.LockEeprom(id))
     {
       RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
                   "Failed to lock EEPROM for servo %u", id);
+      servo_ok = false;
       ok = false;
+    }
+
+    if (servo_ok)
+    {
+      RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                  "Servo %u tuning write succeeded.", id);
     }
   }
 

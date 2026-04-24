@@ -61,6 +61,17 @@
                 <param name="deadband_ccw">3</param>
                 <param name="punch">16</param>
 
+                <!-- Per-servo tuning overrides (indexed by joint order 1..N) -->
+                <param name="position_p_gain_1">32</param>
+                <param name="position_d_gain_1">24</param>
+
+                <param name="position_p_gain_2">28</param>
+                <param name="position_d_gain_2">26</param>
+                <param name="position_i_gain_2">6</param>
+
+                <param name="position_p_gain_3">28</param>
+                <param name="position_d_gain_3">24</param>
+
                 <!-- Set true when firmware publishes measured servo position feedback -->
                 <param name="feedback_from_hardware">true</param>
             </hardware>

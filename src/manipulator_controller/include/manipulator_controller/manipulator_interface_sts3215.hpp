@@ -84,6 +84,18 @@ private:  // these can only be used inside the class itself
   int deadband_cw_;
   int deadband_ccw_;
   int punch_;
+  std::vector<bool> has_position_p_gain_per_servo_;
+  std::vector<bool> has_position_d_gain_per_servo_;
+  std::vector<bool> has_position_i_gain_per_servo_;
+  std::vector<bool> has_deadband_cw_per_servo_;
+  std::vector<bool> has_deadband_ccw_per_servo_;
+  std::vector<bool> has_punch_per_servo_;
+  std::vector<int> position_p_gain_per_servo_;
+  std::vector<int> position_d_gain_per_servo_;
+  std::vector<int> position_i_gain_per_servo_;
+  std::vector<int> deadband_cw_per_servo_;
+  std::vector<int> deadband_ccw_per_servo_;
+  std::vector<int> punch_per_servo_;
 
   std::vector<int> servo_ids_;      // The list of servo IDs to control, e.g. [1, 2, 3, 4]. Loaded from URDF.
   std::vector<double> position_commands_;       // The target positions for each joint, in radians. This is what the controller writes to, and write() sends these to the servos.
