@@ -19,7 +19,7 @@ def generate_launch_description():
     
     trajectory_dir_arg = DeclareLaunchArgument(
         "trajectory_dir",
-        default_value="savedTrajectories",
+        default_value="files/savedTrajectories",
         description="Directory containing pre-generated trajectory JSON files"
     )
 

@@ -33,7 +33,8 @@
                 <!-- STS3215 setup via external serial bridge/controller -->
                 <param name="port">/dev/ttyACM0</param> <!-- USB device where the URT‑2 adapter shows up. -->
                 <param name="baudrate">1000000</param>  <!--serial speed for the bus (1Mbps for STS3215)-->
-                <param name="servo_ids">1,2,3,4</param>
+                <param name="servo_ids">1,2,3</param>
+                <param name="gpio_gripper">22</param>
 
                 <!-- STS3215 register map (override if your firmware differs) -->
                 <param name="goal_position_addr">0x2A</param> <!-- register address to write a target position. -->
