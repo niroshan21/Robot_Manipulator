@@ -155,7 +155,7 @@
         <axis xyz="0 0 1"/>
 
         <!-- Reasonable limits (modify as needed) -->
-        <limit lower="-1.57" upper="1.57" effort="2.0" velocity="5.0"/>
+        <limit lower="-2.35619" upper="2.35619" effort="2.0" velocity="5.0"/>
     </joint>
 
     <link name="h_arm">
@@ -195,7 +195,7 @@
         <!-- Rotation around X-axis -->
         <axis xyz="1 0 0"/>
 
-        <limit lower="-0.79" upper="1.57" effort="2.0" velocity="3.0"/>
+        <limit lower="0" upper="1.57" effort="2.0" velocity="3.0"/>
     </joint>
 
 
