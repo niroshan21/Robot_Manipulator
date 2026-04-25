@@ -250,17 +250,18 @@ class TrajectoryGenerator(Node):
         # [j1 base, j2 shoulder, j3 elbow, j4 gripper]
         waypoints = [
             [ 0.0,  0.0,  0.0,  0.0],   # 0: home
-            [ 0.0,  0.5,  0.5,  0.0],   # 1: raise arm
-            [ 1.5,  0.5,  0.5,  0.0],   # 2: rotate right  (+86°)
-            [-1.2,  0.5,  0.5,  0.0],   # 3: rotate left   (−69°)
-            [ 1.5,  0.5,  0.5,  0.0],   # 4: rotate right  again
-            [-1.2,  0.5,  0.5,  0.0],   # 5: rotate left   again
-            [ 1.5,  0.5,  0.5,  0.0],   # 6: end at right
+            [ 0.0,  0.5,  -0.5,  0.0],   # 1: raise arm
+            [ 0.6,  0.0,  0.5,  0.0],   # 2: rotate right  (+86°)
+            [-0.6,  0.5,  0.0,  0.0],   # 3: rotate left   (−69°)
+            [ 0.6,  0.5,  -0.5,  0.0],   # 4: rotate right  again
+            [-0.6,  0.0,  0.5,  0.0],   # 5: rotate left   again
+            [ 0.6,  0.5,  0.0,  0.0],   # 6: end at right
+            [ 0.0,  0.0,  0.0,  0.0],   # 7: return to home
         ]
 
         # stay_durations[k] = hold (seconds) AFTER arriving at waypoints[k]
         # Index 0 = hold before any movement.
-        stay_durations = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        stay_durations = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
         self.get_logger().info("Waypoints:")
         for k, wp in enumerate(waypoints):
