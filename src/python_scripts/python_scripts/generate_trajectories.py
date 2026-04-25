@@ -177,7 +177,9 @@ class TrajectoryGenerator(Node):
             # Skip duplicate first point for all segments after the first
             # fix issue 4 — always skip point[0] after segment 0 to avoid
             # using MoveIt's "current state" snapshot which may differ from waypoints[i]
-            start_idx = 1 if i > 0 else 0
+            # Also skip point[0] on the very first segment if we already added
+            # a start hold, to keep time strictly increasing.
+            start_idx = 1 if (i > 0 or time_offset > 0.0) else 0
 
             for point in joint_traj.points[start_idx:]:
                 seg_t = self._point_time(point)
