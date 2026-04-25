@@ -49,7 +49,7 @@
                 <param name="position_rad_max">1.57</param>
 
                 <!-- Default STS3215 motion profile -->
-                <param name="servo_speed">1000</param>
+                <param name="servo_speed">1500</param>
                 <param name="servo_acceleration">50</param>
 
                 <!-- STS3215 tuning defaults -->
@@ -62,8 +62,8 @@
                 <param name="punch">16</param>
 
                 <!-- Per-servo tuning overrides (indexed by joint order 1..N) -->
-                <param name="position_p_gain_1">42</param>
-                <param name="position_d_gain_1">24</param>
+                <param name="position_p_gain_1">36</param>
+                <param name="position_d_gain_1">28</param>
 
                 <param name="position_p_gain_2">28</param>
                 <param name="position_d_gain_2">30</param>
