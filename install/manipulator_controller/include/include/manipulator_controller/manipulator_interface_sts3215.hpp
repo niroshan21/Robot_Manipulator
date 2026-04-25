@@ -7,6 +7,8 @@
 #include <rclcpp_lifecycle/state.hpp>
 #include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp> //handles the lifecycle state machine (init → activate → deactivate)
 #include <cstdint>     // for fixed-width integer types like uint8_t, uint16_t
+#include <cstddef>
+#include <cmath>
 
 #include <string>
 #include <vector>
@@ -45,10 +47,12 @@ private:  // these can only be used inside the class itself
   void closePort();                 // Closes the serial port. Called in on_deactivate() and the destructor.
   bool readPresentPosition(uint8_t servo_id, uint16_t &out_position);   // Reads the current position of a servo by its ID. Returns true on success and fills out_position with the raw encoder value.
   bool writeGoalPosition(uint8_t servo_id, uint16_t position);          // Writes a target position to a servo by its ID. Returns true on success.
+  bool applyServoTuning();
   double rawToRadians(uint16_t raw, size_t joint_index) const;          // Converts a raw encoder value from the servo into radians using the servo's global range.
   uint16_t radiansToRaw(double radians, size_t joint_index) const;      // Converts a target position in radians into a raw encoder value using the servo's global range and joint limits for clamping.
   uint16_t clampRaw(int value) const;                                   // Clamps a raw encoder value to the valid range defined by position_raw_min_ and position_raw_max_.
   double clampRad(double value, double min_val, double max_val) const;  // Clamps a radian value to the valid range defined by min_val and max_val, which are typically the joint limits from the URDF.
+  int angleToPulseWidth(double angle, double min_angle = 0.0, double max_angle = M_PI);
 
   bool serial_open_;                // Whether the serial port is currently open.
   std::string port_;                // The name of the serial port to use, e.g. "/dev/ttyUSB0". Loaded from URDF.
@@ -67,10 +71,64 @@ private:  // these can only be used inside the class itself
   uint16_t servo_speed_;            // Default move speed for WritePosEx (0 = use servo default).
   uint8_t servo_acceleration_;      // Default acceleration for WritePosEx (0 = use servo default).
 
+  bool tuning_enable_;
+  bool has_position_p_gain_;
+  bool has_position_d_gain_;
+  bool has_position_i_gain_;
+  bool has_deadband_cw_;
+  bool has_deadband_ccw_;
+  bool has_punch_;
+  int position_p_gain_;
+  int position_d_gain_;
+  int position_i_gain_;
+  int deadband_cw_;
+  int deadband_ccw_;
+  int punch_;
+  std::vector<bool> has_position_p_gain_per_servo_;
+  std::vector<bool> has_position_d_gain_per_servo_;
+  std::vector<bool> has_position_i_gain_per_servo_;
+  std::vector<bool> has_deadband_cw_per_servo_;
+  std::vector<bool> has_deadband_ccw_per_servo_;
+  std::vector<bool> has_punch_per_servo_;
+  std::vector<int> position_p_gain_per_servo_;
+  std::vector<int> position_d_gain_per_servo_;
+  std::vector<int> position_i_gain_per_servo_;
+  std::vector<int> deadband_cw_per_servo_;
+  std::vector<int> deadband_ccw_per_servo_;
+  std::vector<int> punch_per_servo_;
+
+  bool has_velocity_p_gain_;
+  bool has_velocity_i_gain_;
+  int velocity_p_gain_;
+  int velocity_i_gain_;
+  std::vector<bool> has_velocity_p_gain_per_servo_;
+  std::vector<bool> has_velocity_i_gain_per_servo_;
+  std::vector<int> velocity_p_gain_per_servo_;
+  std::vector<int> velocity_i_gain_per_servo_;
+
   std::vector<int> servo_ids_;      // The list of servo IDs to control, e.g. [1, 2, 3, 4]. Loaded from URDF.
   std::vector<double> position_commands_;       // The target positions for each joint, in radians. This is what the controller writes to, and write() sends these to the servos.
   std::vector<double> prev_position_commands_;  // The target positions from the previous control cycle, used to check if we need to send new commands.
   std::vector<double> position_states_;         // The current positions of each joint, in radians, as read from the servos. This is what the controller reads from, and read() updates these values based on feedback from the hardware (or mirrors the commands if feedback is disabled).
+
+  size_t sts_joint_count_;
+
+  bool gpio_initialized_;
+  int gpio_gripper_pin_;
+  int pi_;
+
+  static constexpr int PWM_MIN = 500;
+  static constexpr int PWM_MAX = 2500;
+  static constexpr int PWM_CENTER = 1500;
+
+  static constexpr uint8_t STS_POS_P_GAIN_ADDR = 21;
+  static constexpr uint8_t STS_POS_D_GAIN_ADDR = 22;
+  static constexpr uint8_t STS_POS_I_GAIN_ADDR = 23;
+  static constexpr uint8_t STS_PUNCH_ADDR = 24;
+  static constexpr uint8_t STS_CW_DEADBAND_ADDR = 26;
+  static constexpr uint8_t STS_CCW_DEADBAND_ADDR = 27;
+  static constexpr uint8_t STS_VEL_P_GAIN_ADDR = 37;  // 2-byte EEPROM register
+  static constexpr uint8_t STS_VEL_I_GAIN_ADDR = 39;  // 2-byte EEPROM register
 };
 
 }  // namespace manipulator_controller
