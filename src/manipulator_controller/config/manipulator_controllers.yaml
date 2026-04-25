@@ -47,14 +47,14 @@ arm_controller:
 
     # Tolerances to avoid hunting around zero.
     constraints:
-      goal_time: 0.6
+      goal_time: 1.0
       stopped_velocity_tolerance: 0.02
       joint_1:
-        goal: 0.002
+        goal: 0.003
       joint_2:
-        goal: 0.002
+        goal: 0.003
       joint_3:
-        goal: 0.002
+        goal: 0.003
 
 
 gripper_controller:
