@@ -46,7 +46,8 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {"robot_description": robot_description,
-             "use_sim_time": is_sim},
+             "use_sim_time": is_sim,
+             "thread_priority": 98},
             os.path.join(get_package_share_directory("manipulator_controller"), "config", "manipulator_controllers.yaml")
         ],
         condition=UnlessCondition(is_sim),
