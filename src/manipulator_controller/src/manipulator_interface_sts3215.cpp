@@ -378,6 +378,8 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_activate(const rclcpp_lifecycle::
   position_commands_.assign(info_.joints.size(), 0.0);          // position_commands_ = [0.0, 0.0, 0.0, 0.0]
   prev_position_commands_.assign(info_.joints.size(), 0.0);
   position_states_.assign(info_.joints.size(), 0.0);
+  consecutive_read_failures_.assign(sts_joint_count_, 0);       // reset all failure counters
+  last_known_position_.assign(sts_joint_count_, 0.0);           // initialise last-known to home
 
   if (!openPort())
   {
@@ -434,38 +436,63 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_deactivate(const rclcpp_lifecycle
 hardware_interface::return_type ManipulatorInterfaceSTS3215::read(const rclcpp::Time &,
                                                                   const rclcpp::Duration &)
 {
+  // ── Open-loop mode or port not ready ────────────────────────────────────────
   if (!feedback_from_hardware_ || !serial_open_)
   {
     position_states_ = position_commands_;
     return hardware_interface::return_type::OK;
   }
 
-  bool any_read = false;
+  // ── Per-servo read with consecutive-failure guard ────────────────────────────
+  // Prevents position_states_ from flipping between real position and commanded
+  // position on intermittent ReadPos failures, which caused large output spikes.
   size_t count = std::min(servo_ids_.size(), sts_joint_count_);
   for (size_t i = 0; i < count; ++i)
   {
     uint16_t raw_position = 0;
     if (readPresentPosition(static_cast<uint8_t>(servo_ids_[i]), raw_position))
     {
-      position_states_[i] = rawToRadians(raw_position, i);
-      any_read = true;
+      // SUCCESS — reset counter, store good position, update state
+      consecutive_read_failures_[i] = 0;
+      last_known_position_[i]       = rawToRadians(raw_position, i);
+      position_states_[i]           = last_known_position_[i];
+    }
+    else
+    {
+      // FAILURE — increment counter and decide how to handle
+      consecutive_read_failures_[i]++;
+
+      if (consecutive_read_failures_[i] < READ_FAIL_THRESHOLD)
+      {
+        // Within tolerance: hold the last known good position.
+        // This prevents the state from alternating between real and commanded
+        // on every other cycle, which caused 597+ output spikes in data14.
+        position_states_[i] = last_known_position_[i];
+      }
+      else
+      {
+        // Sustained failure: fall back to mirroring the command so the
+        // controller at least tracks its own output consistently.
+        position_states_[i] = position_commands_[i];
+
+        if (!warned_feedback_)
+        {
+          RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                      "Servo %d: %d consecutive read failures — mirroring commanded "
+                      "position. Check cable/connection for servo ID %d.",
+                      servo_ids_[i],
+                      consecutive_read_failures_[i],
+                      servo_ids_[i]);
+          warned_feedback_ = true;
+        }
+      }
     }
   }
 
+  // ── Gripper (last joint) always mirrors command — no encoder on GPIO servo ──
   if (position_states_.size() > sts_joint_count_)
   {
     position_states_[sts_joint_count_] = position_commands_[sts_joint_count_];
-  }
-
-  if (!any_read)
-  {
-    if (!warned_feedback_)
-    {
-      RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
-                  "No feedback received; mirroring commanded positions.");
-      warned_feedback_ = true;
-    }
-    position_states_ = position_commands_;
   }
 
   return hardware_interface::return_type::OK;

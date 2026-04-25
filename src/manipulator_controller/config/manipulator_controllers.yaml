@@ -43,7 +43,7 @@ arm_controller:
     open_loop_control: false
 
     # when the controller receives a new trajectory goal while a previous goal is active, it will integrate/merge the new trajectory into the current goal instead of discarding or completely replacing it. This allows you to stream incremental trajectory segments smoothly.
-    allow_integration_in_goal_trajectories: true
+    allow_integration_in_goal_trajectories: false
 
     # Tolerances to avoid hunting around zero.
     constraints:
@@ -71,5 +71,5 @@ gripper_controller:
       - position
 
     open_loop_control: false
-    allow_integration_in_goal_trajectories: true
+    allow_integration_in_goal_trajectories: false
 

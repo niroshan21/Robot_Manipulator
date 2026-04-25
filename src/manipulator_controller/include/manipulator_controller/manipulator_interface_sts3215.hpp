@@ -111,6 +111,18 @@ private:  // these can only be used inside the class itself
   std::vector<double> prev_position_commands_;  // The target positions from the previous control cycle, used to check if we need to send new commands.
   std::vector<double> position_states_;         // The current positions of each joint, in radians, as read from the servos. This is what the controller reads from, and read() updates these values based on feedback from the hardware (or mirrors the commands if feedback is disabled).
 
+  // Consecutive read-failure guard.
+  // Prevents position_states_ from alternating between real servo position and
+  // commanded position on intermittent ReadPos failures, which caused large
+  // output spikes in the JointTrajectoryController.
+  // Strategy:
+  //   success          → reset counter, store last_known_position_, update state.
+  //   fail < threshold → hold last_known_position_ (no flip, no spike).
+  //   fail >= threshold→ mirror position_commands_ and warn once.
+  std::vector<int>    consecutive_read_failures_; // per-servo failure counter
+  std::vector<double> last_known_position_;        // last successful read per servo, radians
+  static constexpr int READ_FAIL_THRESHOLD = 3;   // tolerate up to 3 consecutive missed reads
+
   size_t sts_joint_count_;
 
   bool gpio_initialized_;
