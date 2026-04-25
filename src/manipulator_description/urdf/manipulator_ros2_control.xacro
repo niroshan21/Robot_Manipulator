@@ -79,7 +79,7 @@
                 <param name="deadband_ccw_1">2</param>
 
                 <!-- Set true when firmware publishes measured servo position feedback -->
-                <param name="feedback_from_hardware">false</param>
+                <param name="feedback_from_hardware">true</param>
             </hardware>
         </xacro:unless>
 
