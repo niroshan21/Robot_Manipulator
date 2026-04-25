@@ -97,6 +97,15 @@ private:  // these can only be used inside the class itself
   std::vector<int> deadband_ccw_per_servo_;
   std::vector<int> punch_per_servo_;
 
+  bool has_velocity_p_gain_;
+  bool has_velocity_i_gain_;
+  int velocity_p_gain_;
+  int velocity_i_gain_;
+  std::vector<bool> has_velocity_p_gain_per_servo_;
+  std::vector<bool> has_velocity_i_gain_per_servo_;
+  std::vector<int> velocity_p_gain_per_servo_;
+  std::vector<int> velocity_i_gain_per_servo_;
+
   std::vector<int> servo_ids_;      // The list of servo IDs to control, e.g. [1, 2, 3, 4]. Loaded from URDF.
   std::vector<double> position_commands_;       // The target positions for each joint, in radians. This is what the controller writes to, and write() sends these to the servos.
   std::vector<double> prev_position_commands_;  // The target positions from the previous control cycle, used to check if we need to send new commands.
@@ -118,6 +127,8 @@ private:  // these can only be used inside the class itself
   static constexpr uint8_t STS_PUNCH_ADDR = 24;
   static constexpr uint8_t STS_CW_DEADBAND_ADDR = 26;
   static constexpr uint8_t STS_CCW_DEADBAND_ADDR = 27;
+  static constexpr uint8_t STS_VEL_P_GAIN_ADDR = 37;  // 2-byte EEPROM register
+  static constexpr uint8_t STS_VEL_I_GAIN_ADDR = 39;  // 2-byte EEPROM register
 };
 
 }  // namespace manipulator_controller

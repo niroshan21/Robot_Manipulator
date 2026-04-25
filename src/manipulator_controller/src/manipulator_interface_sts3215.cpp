@@ -80,6 +80,10 @@ ManipulatorInterfaceSTS3215::ManipulatorInterfaceSTS3215()
     deadband_cw_(0),
     deadband_ccw_(0),
     punch_(0),
+    has_velocity_p_gain_(false),
+    has_velocity_i_gain_(false),
+    velocity_p_gain_(0),
+    velocity_i_gain_(0),
     sts_joint_count_(0),
     gpio_initialized_(false),
     gpio_gripper_pin_(22),
@@ -168,12 +172,16 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
   has_deadband_cw_per_servo_.assign(sts_joint_count_, false);
   has_deadband_ccw_per_servo_.assign(sts_joint_count_, false);
   has_punch_per_servo_.assign(sts_joint_count_, false);
+  has_velocity_p_gain_per_servo_.assign(sts_joint_count_, false);
+  has_velocity_i_gain_per_servo_.assign(sts_joint_count_, false);
   position_p_gain_per_servo_.assign(sts_joint_count_, 0);
   position_d_gain_per_servo_.assign(sts_joint_count_, 0);
   position_i_gain_per_servo_.assign(sts_joint_count_, 0);
   deadband_cw_per_servo_.assign(sts_joint_count_, 0);
   deadband_ccw_per_servo_.assign(sts_joint_count_, 0);
   punch_per_servo_.assign(sts_joint_count_, 0);
+  velocity_p_gain_per_servo_.assign(sts_joint_count_, 0);
+  velocity_i_gain_per_servo_.assign(sts_joint_count_, 0);
 
   auto gripper_pin_it = info_.hardware_parameters.find("gpio_gripper");
   if (gripper_pin_it != info_.hardware_parameters.end())
@@ -282,6 +290,8 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
   read_tuning_param("deadband_cw", deadband_cw_, has_deadband_cw_);
   read_tuning_param("deadband_ccw", deadband_ccw_, has_deadband_ccw_);
   read_tuning_param("punch", punch_, has_punch_);
+  read_tuning_param("velocity_p_gain", velocity_p_gain_, has_velocity_p_gain_);
+  read_tuning_param("velocity_i_gain", velocity_i_gain_, has_velocity_i_gain_);
 
   auto read_tuning_param_per_servo = [&](const char *base_key, std::vector<int> &values,
                                          std::vector<bool> &has_values)
@@ -313,6 +323,8 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
   read_tuning_param_per_servo("deadband_cw", deadband_cw_per_servo_, has_deadband_cw_per_servo_);
   read_tuning_param_per_servo("deadband_ccw", deadband_ccw_per_servo_, has_deadband_ccw_per_servo_);
   read_tuning_param_per_servo("punch", punch_per_servo_, has_punch_per_servo_);
+  read_tuning_param_per_servo("velocity_p_gain", velocity_p_gain_per_servo_, has_velocity_p_gain_per_servo_);
+  read_tuning_param_per_servo("velocity_i_gain", velocity_i_gain_per_servo_, has_velocity_i_gain_per_servo_);
 
   position_commands_.reserve(info_.joints.size());    // Reserve memory for the position command. position_commands = the vector of target positions that the controller will write to. 
   position_states_.reserve(info_.joints.size());      // position_states = the vector of current positions that the controller will read from the hardware.
@@ -683,6 +695,23 @@ bool ManipulatorInterfaceSTS3215::applyServoTuning()
       }
     };
 
+    auto write_word = [&](uint8_t addr, int value)
+    {
+      uint16_t clamped = static_cast<uint16_t>(std::clamp(value, 0, 65535));
+      if (!scs_.writeWord(id, addr, clamped))
+      {
+        RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                    "Failed to write word addr %u for servo %u", addr, id);
+        servo_ok = false;
+        ok = false;
+      }
+      else
+      {
+        RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                    "Wrote word addr %u value %u to servo %u", addr, clamped, id);
+      }
+    };
+
     auto get_value = [&](const std::vector<bool> &has_values, const std::vector<int> &values,
                          bool has_global, int global_value, int &out_value) -> bool
     {
@@ -748,7 +777,23 @@ bool ManipulatorInterfaceSTS3215::applyServoTuning()
       write_byte(STS_CCW_DEADBAND_ADDR, value);
     }
 
-    if (has_p || has_d || has_i || has_punch || has_cw || has_ccw)
+    bool has_vel_p = get_value(has_velocity_p_gain_per_servo_, velocity_p_gain_per_servo_,
+                               has_velocity_p_gain_, velocity_p_gain_, value);
+    int vel_p_value = value;
+    if (has_vel_p)
+    {
+      write_word(STS_VEL_P_GAIN_ADDR, value);
+    }
+
+    bool has_vel_i = get_value(has_velocity_i_gain_per_servo_, velocity_i_gain_per_servo_,
+                               has_velocity_i_gain_, velocity_i_gain_, value);
+    int vel_i_value = value;
+    if (has_vel_i)
+    {
+      write_word(STS_VEL_I_GAIN_ADDR, value);
+    }
+
+    if (has_p || has_d || has_i || has_punch || has_cw || has_ccw || has_vel_p || has_vel_i)
     {
       std::ostringstream log_line;
       log_line << "Servo " << static_cast<unsigned>(id) << " tuning: ";
@@ -774,7 +819,15 @@ bool ManipulatorInterfaceSTS3215::applyServoTuning()
       }
       if (has_punch)
       {
-        log_line << "Punch=" << punch_value;
+        log_line << "Punch=" << punch_value << " ";
+      }
+      if (has_vel_p)
+      {
+        log_line << "VelP=" << vel_p_value << " ";
+      }
+      if (has_vel_i)
+      {
+        log_line << "VelI=" << vel_i_value;
       }
       RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"), "%s", log_line.str().c_str());
     }
