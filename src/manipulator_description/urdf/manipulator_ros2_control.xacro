@@ -50,20 +50,20 @@
 
                 <!-- Default STS3215 motion profile -->
                 <param name="servo_speed">1500</param>
-                <param name="servo_acceleration">50</param>
+                <param name="servo_acceleration">100</param>
 
                 <!-- STS3215 tuning defaults -->
                 <param name="tuning_enable">true</param>
                 <param name="position_p_gain">28</param>
                 <param name="position_d_gain">24</param>
                 <param name="position_i_gain">0</param>
-                <param name="deadband_cw">3</param>
-                <param name="deadband_ccw">3</param>
+                <param name="deadband_cw">4</param>
+                <param name="deadband_ccw">4</param>
                 <param name="punch">16</param>
 
                 <!-- Per-servo tuning overrides (indexed by joint order 1..N) -->
-                <param name="position_p_gain_1">32</param>
-                <param name="position_d_gain_1">32</param>
+                <param name="position_p_gain_1">36</param>
+                <param name="position_d_gain_1">36</param>
                 <param name="position_i_gain_1">2</param>
                 <param name="velocity_p_gain_1">20</param>
                 <param name="velocity_i_gain_1">50</param>
