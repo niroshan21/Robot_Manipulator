@@ -212,7 +212,7 @@ class TrajectoryGenerator(Node):
                 f"duration {seg_duration:.2f}s"
             )
 
-            # ── Hold at goal of this segment (fix issue 9 — two hold points) ──
+            # ── Hold at goal of this segment (fix issue 9 — monotonic time) ──
             stay = stay_durations[i + 1]   # hold AFTER reaching waypoints[i+1]
             if stay > 0:
                 self.get_logger().info(
@@ -221,14 +221,11 @@ class TrajectoryGenerator(Node):
                 last = all_points[-1]
                 n    = len(last['positions'])
 
-                # Point 1: zero-velocity arrival
-                all_points.append({
-                    'positions':           list(last['positions']),
-                    'velocities':          [0.0] * n,
-                    'accelerations':       [0.0] * n,
-                    'time_from_start_sec': time_offset,          # same as segment end
-                })
-                # Point 2: zero-velocity departure (spans the hold window)
+                # Ensure the final segment point is a stop before holding
+                last['velocities'] = [0.0] * n
+                last['accelerations'] = [0.0] * n
+
+                # Single hold point to keep time strictly increasing
                 all_points.append({
                     'positions':           list(last['positions']),
                     'velocities':          [0.0] * n,
