@@ -38,8 +38,7 @@ arm_controller:
     # Which state interfaces the controller expects to read (feedback).
     state_interfaces:
       - position
-      - velocity
-
+      
     #the controller sends commands but does not rely on a low-level closed-loop controller or hardware to precisely track them. It operates open loop — it publishes desired setpoints and assumes the simulator / hardware will move accordingly, but it won’t try to close the loop itself. This is useful for simple simulations or systems without built-in position control.
     open_loop_control: false
 
