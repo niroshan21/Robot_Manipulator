@@ -44,24 +44,16 @@ class LightweightTaskServer(Node):
         self.trajectories = {}
         self.load_all_trajectories()
         
-        # Create action clients for arm and gripper controllers
+        # Create action client for arm controller
         self.arm_action_client = ActionClient(
             self, 
             FollowJointTrajectory, 
             '/arm_controller/follow_joint_trajectory'
         )
         
-        self.gripper_action_client = ActionClient(
-            self, 
-            FollowJointTrajectory, 
-            '/gripper_controller/follow_joint_trajectory'
-        )
-        
         # Wait for action servers
         self.get_logger().info('Waiting for arm controller...')
         self.arm_action_client.wait_for_server()
-        self.get_logger().info('Waiting for gripper controller...')
-        self.gripper_action_client.wait_for_server()
         
         # Create action server for task execution
         self.action_server = ActionServer(
@@ -78,26 +70,20 @@ class LightweightTaskServer(Node):
     def load_all_trajectories(self):
         """Load all pre-generated trajectory files"""
         try:
-            # Load tasks 0, 1, 2 (separate arm and gripper files)
+            # Load tasks 0, 1, 2 (arm files only)
             for task_num in range(3):  # Tasks 0, 1, 2
                 arm_file = os.path.join(self.trajectory_path, f'task_{task_num}_arm_trajectory.json')
-                gripper_file = os.path.join(self.trajectory_path, f'task_{task_num}_gripper_trajectory.json')
                 
-                if os.path.exists(arm_file) and os.path.exists(gripper_file):
+                if os.path.exists(arm_file):
                     with open(arm_file, 'r') as f:
                         arm_data = json.load(f)
-                    with open(gripper_file, 'r') as f:
-                        gripper_data = json.load(f)
                     
                     self.trajectories[task_num] = {
-                        'arm': arm_data,
-                        'gripper': gripper_data
+                        'arm': arm_data
                     }
                     
                     self.get_logger().info(
-                        f'✓ Loaded Task {task_num}: '
-                        f'arm ({len(arm_data["points"])} pts), '
-                        f'gripper ({len(gripper_data["points"])} pts)'
+                        f'✓ Loaded Task {task_num}: arm ({len(arm_data["points"])} pts)'
                     )
                 else:
                     self.get_logger().warn(f'Missing trajectory files for task {task_num}')
@@ -108,22 +94,13 @@ class LightweightTaskServer(Node):
                 with open(full_traj_file, 'r') as f:
                     full_data = json.load(f)
                 
-                # Split the 4-joint trajectory into arm (joints 1-3) and gripper (joint 4)
+                # Split the 4-joint trajectory into arm (joints 1-3) only
                 arm_data = {
                     'name': 'task_3_arm_trajectory',
                     'timestamp': full_data['timestamp'],
                     'planning_group': 'arm',
                     'planner_id': full_data['planner_id'],
                     'joint_names': ['joint_1', 'joint_2', 'joint_3'],
-                    'points': []
-                }
-                
-                gripper_data = {
-                    'name': 'task_3_gripper_trajectory',
-                    'timestamp': full_data['timestamp'],
-                    'planning_group': 'gripper',
-                    'planner_id': full_data['planner_id'],
-                    'joint_names': ['joint_4'],  # Only joint_4, joint_5 is a mimic joint
                     'points': []
                 }
                 
@@ -137,31 +114,19 @@ class LightweightTaskServer(Node):
                         'time_from_start_sec': point['time_from_start_sec']
                     }
                     arm_data['points'].append(arm_point)
-                    
-                    # Gripper gets only 4th joint (joint_5 mimics automatically)
-                    gripper_pos = point['positions'][3]
-                    gripper_point = {
-                        'positions': [gripper_pos],  # Only joint_4
-                        'velocities': [point['velocities'][3]] if point.get('velocities') and len(point['velocities']) > 3 else [],
-                        'accelerations': [point['accelerations'][3]] if point.get('accelerations') and len(point['accelerations']) > 3 else [],
-                        'time_from_start_sec': point['time_from_start_sec']
-                    }
-                    gripper_data['points'].append(gripper_point)
                 
                 self.trajectories[3] = {
-                    'arm': arm_data,
-                    'gripper': gripper_data
+                    'arm': arm_data
                 }
                 
                 self.get_logger().info(
                     f'✓ Loaded Task 3 (Full Smooth Trajectory): '
-                    f'arm ({len(arm_data["points"])} pts), '
-                    f'gripper ({len(gripper_data["points"])} pts)'
+                    f'arm ({len(arm_data["points"])} pts)'
                 )
             else:
                 self.get_logger().warn(f'Missing full_smooth_trajectory.json for task 3')
             
-            # Load tasks 5, 6, 7, 8 (4-joint trajectory files)
+            # Load tasks 5, 6, 7, 8 (4-joint trajectory files, arm only)
             for task_num in [5, 6, 7, 8]:
                 task_file = os.path.join(self.trajectory_path, f'task_{task_num}.json')
                 
@@ -169,22 +134,13 @@ class LightweightTaskServer(Node):
                     with open(task_file, 'r') as f:
                         full_data = json.load(f)
                     
-                    # Split the 4-joint trajectory into arm (joints 1-3) and gripper (joint 4)
+                    # Split the 4-joint trajectory into arm (joints 1-3) only
                     arm_data = {
                         'name': f'task_{task_num}_arm_trajectory',
                         'timestamp': full_data['timestamp'],
                         'planning_group': 'arm',
                         'planner_id': full_data['planner_id'],
                         'joint_names': ['joint_1', 'joint_2', 'joint_3'],
-                        'points': []
-                    }
-                    
-                    gripper_data = {
-                        'name': f'task_{task_num}_gripper_trajectory',
-                        'timestamp': full_data['timestamp'],
-                        'planning_group': 'gripper',
-                        'planner_id': full_data['planner_id'],
-                        'joint_names': ['joint_4'],
                         'points': []
                     }
                     
@@ -198,26 +154,13 @@ class LightweightTaskServer(Node):
                             'time_from_start_sec': point['time_from_start_sec']
                         }
                         arm_data['points'].append(arm_point)
-                        
-                        # Gripper gets only 4th joint
-                        gripper_pos = point['positions'][3]
-                        gripper_point = {
-                            'positions': [gripper_pos],
-                            'velocities': [point['velocities'][3]] if point.get('velocities') and len(point['velocities']) > 3 else [],
-                            'accelerations': [point['accelerations'][3]] if point.get('accelerations') and len(point['accelerations']) > 3 else [],
-                            'time_from_start_sec': point['time_from_start_sec']
-                        }
-                        gripper_data['points'].append(gripper_point)
                     
                     self.trajectories[task_num] = {
-                        'arm': arm_data,
-                        'gripper': gripper_data
+                        'arm': arm_data
                     }
                     
                     self.get_logger().info(
-                        f'✓ Loaded Task {task_num}: '
-                        f'arm ({len(arm_data["points"])} pts), '
-                        f'gripper ({len(gripper_data["points"])} pts)'
+                        f'✓ Loaded Task {task_num}: arm ({len(arm_data["points"])} pts)'
                     )
                 else:
                     self.get_logger().warn(f'Missing task_{task_num}.json')
@@ -288,10 +231,7 @@ class LightweightTaskServer(Node):
             
             # Convert JSON data to JointTrajectory messages
             arm_trajectory = self.json_to_joint_trajectory(task_data['arm'])
-            gripper_trajectory = self.json_to_joint_trajectory(task_data['gripper'])
-            
             self.get_logger().info(f'Arm trajectory: {len(arm_trajectory.points)} points')
-            self.get_logger().info(f'Gripper trajectory: {len(gripper_trajectory.points)} points')
             
             # Create FollowJointTrajectory goals
             arm_goal = FollowJointTrajectory.Goal()
@@ -301,12 +241,6 @@ class LightweightTaskServer(Node):
             arm_goal.trajectory.header.stamp.nanosec = 0
             arm_goal.trajectory.header.frame_id = ''
             
-            gripper_goal = FollowJointTrajectory.Goal()
-            gripper_goal.trajectory = gripper_trajectory
-            # Set timestamp to zero to tell controller to start immediately
-            gripper_goal.trajectory.header.stamp.sec = 0
-            gripper_goal.trajectory.header.stamp.nanosec = 0
-            gripper_goal.trajectory.header.frame_id = ''
             
             # Send arm trajectory
             self.get_logger().info('Sending arm trajectory...')
@@ -327,26 +261,6 @@ class LightweightTaskServer(Node):
             arm_result = await arm_result_future
             
             self.get_logger().info(f'Arm trajectory completed with status: {arm_result.status}')
-            
-            # Send gripper trajectory
-            self.get_logger().info('Sending gripper trajectory...')
-            gripper_future = self.gripper_action_client.send_goal_async(gripper_goal)
-            gripper_goal_handle = await gripper_future
-            
-            if not gripper_goal_handle.accepted:
-                self.get_logger().error('Gripper trajectory rejected!')
-                goal_handle.abort()
-                result = ManipulatorTask.Result()
-                result.success = False
-                return result
-            
-            self.get_logger().info('Gripper trajectory accepted, waiting for completion...')
-            
-            # Wait for gripper to complete
-            gripper_result_future = gripper_goal_handle.get_result_async()
-            gripper_result = await gripper_result_future
-            
-            self.get_logger().info(f'Gripper trajectory completed with status: {gripper_result.status}')
             
             # Success!
             goal_handle.succeed()

@@ -52,7 +52,6 @@ private:  // these can only be used inside the class itself
   uint16_t radiansToRaw(double radians, size_t joint_index) const;      // Converts a target position in radians into a raw encoder value using the servo's global range and joint limits for clamping.
   uint16_t clampRaw(int value) const;                                   // Clamps a raw encoder value to the valid range defined by position_raw_min_ and position_raw_max_.
   double clampRad(double value, double min_val, double max_val) const;  // Clamps a radian value to the valid range defined by min_val and max_val, which are typically the joint limits from the URDF.
-  int angleToPulseWidth(double angle, double min_angle = 0.0, double max_angle = M_PI);
 
   bool serial_open_;                // Whether the serial port is currently open.
   std::string port_;                // The name of the serial port to use, e.g. "/dev/ttyUSB0". Loaded from URDF.
@@ -124,14 +123,6 @@ private:  // these can only be used inside the class itself
   static constexpr int READ_FAIL_THRESHOLD = 3;   // tolerate up to 3 consecutive missed reads
 
   size_t sts_joint_count_;
-
-  bool gpio_initialized_;
-  int gpio_gripper_pin_;
-  int pi_;
-
-  static constexpr int PWM_MIN = 500;
-  static constexpr int PWM_MAX = 2500;
-  static constexpr int PWM_CENTER = 1500;
 
   static constexpr uint8_t STS_POS_P_GAIN_ADDR = 21;
   static constexpr uint8_t STS_POS_D_GAIN_ADDR = 22;

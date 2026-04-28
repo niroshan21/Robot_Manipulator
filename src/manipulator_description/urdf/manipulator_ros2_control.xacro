@@ -34,7 +34,6 @@
                 <param name="port">/dev/ttyACM0</param> <!-- USB device where the URT‑2 adapter shows up. -->
                 <param name="baudrate">1000000</param>  <!--serial speed for the bus (1Mbps for STS3215)-->
                 <param name="servo_ids">1,2,3</param>
-                <param name="gpio_gripper">22</param>
 
                 <!-- STS3215 register map (override if your firmware differs) -->
                 <param name="goal_position_addr">0x2A</param> <!-- register address to write a target position. -->
@@ -50,7 +49,7 @@
 
                 <!-- Default STS3215 motion profile -->
                 <param name="servo_speed">1500</param>
-                <param name="servo_acceleration">100</param>
+                <param name="servo_acceleration">30</param>
 
                 <!-- STS3215 tuning defaults -->
                 <param name="tuning_enable">true</param>
@@ -62,21 +61,34 @@
                 <param name="punch">16</param>
 
                 <!-- Per-servo tuning overrides (indexed by joint order 1..N) -->
-                <param name="position_p_gain_1">36</param>
-                <param name="position_d_gain_1">36</param>
+                <param name="position_p_gain_1">20</param>
+                <param name="position_d_gain_1">60</param>
                 <param name="position_i_gain_1">2</param>
-                <param name="velocity_p_gain_1">20</param>
-                <param name="velocity_i_gain_1">50</param>
+                <param name="velocity_p_gain_1">10</param>
+                <param name="velocity_i_gain_1">200</param>
 
-                <param name="position_p_gain_2">28</param>
-                <param name="position_d_gain_2">30</param>
-                <param name="position_i_gain_2">4</param>
+                <param name="position_p_gain_2">25</param>
+                <param name="position_d_gain_2">50</param>
+                <param name="position_i_gain_2">10</param>
+                <param name="velocity_p_gain_2">10</param>
+                <param name="velocity_i_gain_2">200</param>
 
-                <param name="position_p_gain_3">32</param>
-                <param name="position_d_gain_3">24</param>
+                <param name="position_p_gain_3">30</param>
+                <param name="position_d_gain_3">45</param>
+                <param name="position_i_gain_3">6</param>
+                <param name="velocity_p_gain_3">10</param>
+                <param name="velocity_i_gain_3">200</param>
 
-                <param name="deadband_cw_1">2</param>
-                <param name="deadband_ccw_1">2</param>
+                <param name="deadband_cw_1">6</param>
+                <param name="deadband_ccw_1">4</param>
+                <param name="deadband_cw_2">4</param>
+                <param name="deadband_ccw_2">4</param>
+                <param name="deadband_cw_3">4</param>
+                <param name="deadband_ccw_3">4</param>
+
+                <param name="punch_1">12</param>
+                <param name="punch_2">16</param>
+                <param name="punch_3">12</param>
 
                 <!-- Set true when firmware publishes measured servo position feedback -->
                 <param name="feedback_from_hardware">true</param>
@@ -111,16 +123,6 @@
             </command_interface>
             <state_interface name="position"/>
         </joint>
-
-        <!-- joint_4 (gripper_L) : URDF limits [0, 1.2] -->
-        <joint name="joint_4">
-            <command_interface name="position">
-                <param name="min">0.0</param>
-                <param name="max">0.79</param>
-            </command_interface>
-            <state_interface name="position"/>
-        </joint>
-
 
     </ros2_control>
 

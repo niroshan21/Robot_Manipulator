@@ -8,10 +8,6 @@ controller_manager:
     arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-    gripper_controller:
-      type: joint_trajectory_controller/JointTrajectoryController
-      # type: forward_command_controller/ForwardCommandController
-
     # Broadcaster that publishes joint states (sensor-like feed of positions/velocities)
     # so other nodes (e.g., rviz, controllers) can read current joint values.
     joint_state_broadcaster:
@@ -47,29 +43,12 @@ arm_controller:
 
     # Tolerances to avoid hunting around zero.
     constraints:
-      goal_time: 1.0
+      goal_time: 0.0
       stopped_velocity_tolerance: 0.02
       joint_1:
-        goal: 0.006
+        goal: 0.06
       joint_2:
-        goal: 0.006
+        goal: 0.06
       joint_3:
-        goal: 0.006
-
-
-gripper_controller:
-  ros__parameters:
-    joints:
-      - joint_4
-
-    # interface_name: position
-
-    command_interfaces:
-      - position
-
-    state_interfaces:
-      - position
-
-    open_loop_control: false
-    allow_integration_in_goal_trajectories: false
+        goal: 0.06
 

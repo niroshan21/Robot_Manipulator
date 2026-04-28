@@ -3,7 +3,6 @@ moveit_controller_manager: moveit_simple_controller_manager/MoveItSimpleControll
 moveit_simple_controller_manager:
   controller_names:
     - arm_controller
-    - gripper_controller
 
   arm_controller:
     action_ns: follow_joint_trajectory
@@ -13,14 +12,6 @@ moveit_simple_controller_manager:
       - joint_1
       - joint_2
       - joint_3
-
-  gripper_controller:
-    action_ns: follow_joint_trajectory
-    type: FollowJointTrajectory
-    default: true
-    joints:
-      - joint_4
-      - joint_5
 
 
 # This file connects MoveIt to ros2_control so that planned trajectories are actually sent to your robot’s joint controllers.

@@ -12,7 +12,6 @@
 #include <cmath>        // Math functions and constants. (For example, std::abs, std::sin, std::cos, std::tan, std::atan2, M_PI)
 #include <cctype>       // std::isspace
 #include <sstream>      // For string stream operations, which allow you to build strings from other data types in a convenient way. (std::stringstream)
-#include <pigpiod_if2.h>
 
 namespace
 {
@@ -84,10 +83,7 @@ ManipulatorInterfaceSTS3215::ManipulatorInterfaceSTS3215()
     has_velocity_i_gain_(false),
     velocity_p_gain_(0),
     velocity_i_gain_(0),
-    sts_joint_count_(0),
-    gpio_initialized_(false),
-    gpio_gripper_pin_(22),
-    pi_(-1)
+    sts_joint_count_(0)
 {
 }
 
@@ -95,12 +91,6 @@ ManipulatorInterfaceSTS3215::~ManipulatorInterfaceSTS3215()
 {
   closePort();
 
-  if (gpio_initialized_)
-  {
-    set_servo_pulsewidth(pi_, gpio_gripper_pin_, 0);
-    pigpio_stop(pi_);
-    gpio_initialized_ = false;
-  }
 }
 
 // This function is called once at startup, before the robot is enabled. It's where you read the configuration from the URDF and do any necessary setup that doesn't involve talking to the hardware yet.
@@ -157,12 +147,12 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
   auto servo_ids_it = info_.hardware_parameters.find("servo_ids");
   if (servo_ids_it != info_.hardware_parameters.end())
   {
-    sts_joint_count_ = info_.joints.size() > 0 ? info_.joints.size() - 1 : 0;
+    sts_joint_count_ = info_.joints.size();
     loadServoIds(servo_ids_it->second, sts_joint_count_);
   }
   else
   {
-    sts_joint_count_ = info_.joints.size() > 0 ? info_.joints.size() - 1 : 0;
+    sts_joint_count_ = info_.joints.size();
     loadServoIds("", sts_joint_count_);
   }
 
@@ -182,20 +172,6 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
   punch_per_servo_.assign(sts_joint_count_, 0);
   velocity_p_gain_per_servo_.assign(sts_joint_count_, 0);
   velocity_i_gain_per_servo_.assign(sts_joint_count_, 0);
-
-  auto gripper_pin_it = info_.hardware_parameters.find("gpio_gripper");
-  if (gripper_pin_it != info_.hardware_parameters.end())
-  {
-    try
-    {
-      gpio_gripper_pin_ = std::stoi(gripper_pin_it->second);
-    }
-    catch (...)
-    {
-      RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
-                  "Invalid gpio_gripper pin; using default %d", gpio_gripper_pin_);
-    }
-  }
 
   auto goal_addr_it = info_.hardware_parameters.find("goal_position_addr");
   if (goal_addr_it != info_.hardware_parameters.end())
@@ -395,23 +371,6 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_activate(const rclcpp_lifecycle::
     return CallbackReturn::FAILURE;
   }
 
-  pi_ = pigpio_start(nullptr, nullptr);
-  if (pi_ < 0)
-  {
-    RCLCPP_FATAL(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
-                 "Failed to connect to pigpiod daemon! Error code: %d. Make sure pigpiod is running.", pi_);
-    return CallbackReturn::FAILURE;
-  }
-  gpio_initialized_ = true;
-  set_mode(pi_, gpio_gripper_pin_, PI_OUTPUT);
-
-  if (set_servo_pulsewidth(pi_, gpio_gripper_pin_, PWM_CENTER) != 0)
-  {
-    RCLCPP_FATAL(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
-                 "Failed to set gripper servo on GPIO pin %d", gpio_gripper_pin_);
-    return CallbackReturn::FAILURE;
-  }
-
   return CallbackReturn::SUCCESS;
 }
 
@@ -419,13 +378,6 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_deactivate(const rclcpp_lifecycle
 {
   RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"), "Stopping STS3215 hardware ...");
   closePort();
-
-  if (gpio_initialized_)
-  {
-    set_servo_pulsewidth(pi_, gpio_gripper_pin_, 0);
-    pigpio_stop(pi_);
-    gpio_initialized_ = false;
-  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -489,12 +441,6 @@ hardware_interface::return_type ManipulatorInterfaceSTS3215::read(const rclcpp::
     }
   }
 
-  // ── Gripper (last joint) always mirrors command — no encoder on GPIO servo ──
-  if (position_states_.size() > sts_joint_count_)
-  {
-    position_states_[sts_joint_count_] = position_commands_[sts_joint_count_];
-  }
-
   return hardware_interface::return_type::OK;
 }
 
@@ -512,12 +458,6 @@ hardware_interface::return_type ManipulatorInterfaceSTS3215::write(const rclcpp:
     return hardware_interface::return_type::ERROR;
   }
 
-  if (!gpio_initialized_)
-  {
-    RCLCPP_ERROR(rclcpp::get_logger("ManipulatorInterfaceSTS3215"), "GPIO not initialized");
-    return hardware_interface::return_type::ERROR;
-  }
-
   size_t count = std::min(servo_ids_.size(), sts_joint_count_);
   for (size_t i = 0; i < count; ++i)
   {
@@ -528,14 +468,6 @@ hardware_interface::return_type ManipulatorInterfaceSTS3215::write(const rclcpp:
                           "Failed to write goal position for servo " << servo_ids_[i]);
       return hardware_interface::return_type::ERROR;
     }
-  }
-
-  if (position_commands_.size() > sts_joint_count_)
-  {
-    int gripper_angle = static_cast<int>(((-position_commands_[sts_joint_count_]) * 180) / (M_PI / 2));
-    gripper_angle = std::clamp(gripper_angle, 0, 180);
-    int gripper_pulse = angleToPulseWidth(gripper_angle * M_PI / 180.0, 0.0, M_PI);
-    set_servo_pulsewidth(pi_, gpio_gripper_pin_, gripper_pulse);
   }
 
   prev_position_commands_ = position_commands_;
@@ -907,15 +839,6 @@ double ManipulatorInterfaceSTS3215::clampRad(double value, double min_val, doubl
     return max_val;
   }
   return value;
-}
-
-int ManipulatorInterfaceSTS3215::angleToPulseWidth(double angle, double min_angle, double max_angle)
-{
-  double normalized = (angle - min_angle) / (max_angle - min_angle);
-  normalized = std::clamp(normalized, 0.0, 1.0);
-
-  int pulse_width = PWM_MIN + static_cast<int>(normalized * (PWM_MAX - PWM_MIN));
-  return std::clamp(pulse_width, PWM_MIN, PWM_MAX);
 }
 
 }  // namespace manipulator_controller
