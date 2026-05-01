@@ -433,6 +433,26 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_activate(const rclcpp_lifecycle::
     return CallbackReturn::FAILURE;
   }
 
+  // Initialize commands to the current hardware position to avoid startup jumps.
+  if (feedback_from_hardware_ && serial_open_)
+  {
+    size_t count = std::min(servo_ids_.size(), sts_joint_count_);
+    for (size_t i = 0; i < count; ++i)
+    {
+      uint16_t raw_position = 0;
+      if (readPresentPosition(static_cast<uint8_t>(servo_ids_[i]), raw_position))
+      {
+        double pos = rawToRadians(raw_position, i);
+        position_states_[i] = pos;
+        last_known_position_[i] = pos;
+        position_commands_[i] = pos;
+        prev_position_commands_[i] = pos;
+        RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                    "Init joint %zu (servo %d) to %.4f rad", i + 1, servo_ids_[i], pos);
+      }
+    }
+  }
+
   return CallbackReturn::SUCCESS;
 }
 
