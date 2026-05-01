@@ -59,6 +59,7 @@ ManipulatorInterfaceSTS3215::ManipulatorInterfaceSTS3215()
     baudrate_(1000000),
     feedback_from_hardware_(false),
     warned_feedback_(false),
+    warned_speed_feedback_(false),
     goal_position_addr_(0x2A),
     present_position_addr_(0x38),
     position_raw_min_(0),
@@ -328,6 +329,7 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_init(const hardware_interface::Ha
 
   position_commands_.reserve(info_.joints.size());    // Reserve memory for the position command. position_commands = the vector of target positions that the controller will write to. 
   position_states_.reserve(info_.joints.size());      // position_states = the vector of current positions that the controller will read from the hardware.
+  velocity_states_.reserve(info_.joints.size());      // velocity_states = the vector of current velocities that the controller will read from the hardware.
   prev_position_commands_.reserve(info_.joints.size()); // prev_position_commands = a copy of the last commands we sent, used to check if the command has changed before writing to the hardware.
 
   return CallbackReturn::SUCCESS;
@@ -352,6 +354,22 @@ std::vector<hardware_interface::StateInterface> ManipulatorInterfaceSTS3215::exp
   {
     state_interfaces.emplace_back(hardware_interface::StateInterface(
         info_.joints[i].name, hardware_interface::HW_IF_POSITION, &position_states_[i]));
+
+    bool has_velocity = false;
+    for (const auto &iface : info_.joints[i].state_interfaces)
+    {
+      if (iface.name == hardware_interface::HW_IF_VELOCITY)
+      {
+        has_velocity = true;
+        break;
+      }
+    }
+
+    if (has_velocity)
+    {
+      state_interfaces.emplace_back(hardware_interface::StateInterface(
+          info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &velocity_states_[i]));
+    }
   }
 
   return state_interfaces;
@@ -378,8 +396,11 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_activate(const rclcpp_lifecycle::
   position_commands_.assign(info_.joints.size(), 0.0);          // position_commands_ = [0.0, 0.0, 0.0, 0.0]
   prev_position_commands_.assign(info_.joints.size(), 0.0);
   position_states_.assign(info_.joints.size(), 0.0);
+  velocity_states_.assign(info_.joints.size(), 0.0);
   consecutive_read_failures_.assign(sts_joint_count_, 0);       // reset all failure counters
+  consecutive_speed_failures_.assign(sts_joint_count_, 0);
   last_known_position_.assign(sts_joint_count_, 0.0);           // initialise last-known to home
+  last_known_velocity_.assign(sts_joint_count_, 0.0);
 
   if (!openPort())
   {
@@ -440,6 +461,7 @@ hardware_interface::return_type ManipulatorInterfaceSTS3215::read(const rclcpp::
   if (!feedback_from_hardware_ || !serial_open_)
   {
     position_states_ = position_commands_;
+    velocity_states_.assign(info_.joints.size(), 0.0);
     return hardware_interface::return_type::OK;
   }
 
@@ -450,7 +472,11 @@ hardware_interface::return_type ManipulatorInterfaceSTS3215::read(const rclcpp::
   for (size_t i = 0; i < count; ++i)
   {
     uint16_t raw_position = 0;
-    if (readPresentPosition(static_cast<uint8_t>(servo_ids_[i]), raw_position))
+    int raw_speed = 0;
+    bool pos_ok = readPresentPosition(static_cast<uint8_t>(servo_ids_[i]), raw_position);
+    bool speed_ok = readPresentSpeed(static_cast<uint8_t>(servo_ids_[i]), raw_speed);
+
+    if (pos_ok)
     {
       // SUCCESS — reset counter, store good position, update state
       consecutive_read_failures_[i] = 0;
@@ -487,12 +513,46 @@ hardware_interface::return_type ManipulatorInterfaceSTS3215::read(const rclcpp::
         }
       }
     }
+
+    if (speed_ok)
+    {
+      // Convert steps/s to rad/s (4096 steps per revolution)
+      double velocity = raw_speed * (2.0 * M_PI / 4096.0);
+      if (i == 2)
+      {
+        velocity = -velocity;
+      }
+      consecutive_speed_failures_[i] = 0;
+      last_known_velocity_[i]        = velocity;
+      velocity_states_[i]            = last_known_velocity_[i];
+    }
+    else
+    {
+      consecutive_speed_failures_[i]++;
+      if (consecutive_speed_failures_[i] < READ_FAIL_THRESHOLD)
+      {
+        velocity_states_[i] = last_known_velocity_[i];
+      }
+      else
+      {
+        velocity_states_[i] = 0.0;
+        if (!warned_speed_feedback_)
+        {
+          RCLCPP_WARN(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                      "Servo %d: %d consecutive speed read failures — setting velocity to 0.",
+                      servo_ids_[i],
+                      consecutive_speed_failures_[i]);
+          warned_speed_feedback_ = true;
+        }
+      }
+    }
   }
 
   // ── Gripper (last joint) always mirrors command — no encoder on GPIO servo ──
   if (position_states_.size() > sts_joint_count_)
   {
     position_states_[sts_joint_count_] = position_commands_[sts_joint_count_];
+    velocity_states_[sts_joint_count_] = 0.0;
   }
 
   return hardware_interface::return_type::OK;
@@ -574,7 +634,7 @@ uint16_t ManipulatorInterfaceSTS3215::radiansToRaw(double radians, size_t joint_
   }
   if (position_rad_max_ <= position_rad_min_)
   {
-    return clampRaw(position_raw_min_);
+    return clampRaw(2047); 
   }
 
   double limit_min = position_rad_min_;
@@ -673,6 +733,19 @@ bool ManipulatorInterfaceSTS3215::readPresentPosition(uint8_t servo_id, uint16_t
   }
 
   out_position = clampRaw(position);   // out_position is passed by reference, so we modify the caller's variable directly. We also clamp it to ensure it's within valid bounds.
+  return true;
+}
+
+bool ManipulatorInterfaceSTS3215::readPresentSpeed(uint8_t servo_id, int &out_speed)
+{
+  // ReadSpeed returns -1 on error; otherwise speed is in steps/s (signed).
+  int speed = scs_.ReadSpeed(servo_id);
+  if (speed == -1)
+  {
+    return false;
+  }
+
+  out_speed = speed;
   return true;
 }
 

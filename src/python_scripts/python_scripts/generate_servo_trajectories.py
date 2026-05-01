@@ -30,10 +30,10 @@ class ServoTrajectoryGenerator:
     
     # Joint limits from URDF (radians)
     JOINT_LIMITS = {
-        'joint_1': {'min': -1.57, 'max': 1.57},  # Base: -90° to 90°
-        'joint_2': {'min': -0.79, 'max': 1.57},  # Shoulder: -45° to 90°
-        'joint_3': {'min': -0.79, 'max': 0.79},  # Elbow: -45° to 45°
-        'joint_4': {'min': 0.0, 'max': 0.79},    # Gripper: 0° to 45°
+        'joint_1': {'min': -2.35619, 'max': 2.35619},  # Base: -135 deg to 135 deg
+        'joint_2': {'min': 0.0, 'max': 1.57},          # Shoulder: 0 deg to 90 deg
+        'joint_3': {'min': -0.79, 'max': 0.79},        # Elbow: -45 deg to 45 deg
+        'joint_4': {'min': 0.0, 'max': 0.79},          # Gripper L: 0 deg to 45 deg
     }
     
     def __init__(self, workspace_root=None):

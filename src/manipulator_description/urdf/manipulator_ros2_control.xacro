@@ -45,8 +45,8 @@
                 <param name="position_raw_max">4095</param>
 
                 <!-- Servo angle range that maps to raw min/max -->
-                <param name="position_rad_min">-1.57</param>
-                <param name="position_rad_max">1.57</param>
+                <param name="position_rad_min">-3.14159</param>
+                <param name="position_rad_max">3.14159</param>
 
                  <!-- Default STS3215 motion profile -->
                 <param name="servo_speed">1500</param>
@@ -98,34 +98,37 @@
 
 
 
-        <!-- joint_1 (razor_connector -> motor_2) : URDF limits [-3.14, 3.14] -->
+        <!-- joint_1 (razor_connector -> motor_2) : URDF limits [-2.35619, 2.35619] -->
         <joint name="joint_1">
             <command_interface name="position">
-                <param name="min">-1.57</param>
-                <param name="max">1.57</param>
+                <param name="min">-2.35619</param>
+                <param name="max">2.35619</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/>
         </joint>
 
-        <!-- joint_2 (motor_2 -> h_arm_L) : URDF limits [-1.57, 1.57] -->
+        <!-- joint_2 (motor_2 -> h_arm_L) : URDF limits [0, 1.57] -->
         <joint name="joint_2">
             <command_interface name="position">
-                <param name="min">-0.79</param>
+                <param name="min">0</param>
                 <param name="max">1.57</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/>
         </joint>
 
-        <!-- joint_3 (h_arm -> motor_3) : URDF limits [-1.57, 1.57] -->
+        <!-- joint_3 (h_arm -> motor_3) : URDF limits [-0.79, 0.79] -->
         <joint name="joint_3">
             <command_interface name="position">
                 <param name="min">-0.79</param>
                 <param name="max">0.79</param>
             </command_interface>
             <state_interface name="position"/>
+            <state_interface name="velocity"/>
         </joint>
 
-        <!-- joint_4 (gripper_L) : URDF limits [0, 1.2] -->
+        <!-- joint_4 (gripper_L) : URDF limits [0, 0.79] -->
         <joint name="joint_4">
             <command_interface name="position">
                 <param name="min">0.0</param>

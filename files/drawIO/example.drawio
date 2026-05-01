@@ -1,0 +1,108 @@
+<mxfile host="65bd71144e">
+    <diagram id="hmXebrY9VTfAPCgbBTC9" name="Page-1">
+        <mxGraphModel dx="774" dy="795" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram name="Page-1" id="diagram-1">
+        <mxGraphModel dx="679" dy="795" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="850" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="task" value="ManipulatorTask action" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8E3FF;strokeColor=#8C84D6;fontSize=19;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="430" y="40" width="240" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="full" value="Full task server&lt;br&gt;MoveItPy : online planning" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DFF6EE;strokeColor=#61C0AE;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="130" width="250" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="light" value="Lightweight task server&lt;br&gt;replays JSON trajectories" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DFF6EE;strokeColor=#61C0AE;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="660" y="130" width="250" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="moveit" value="MoveIt2 move_group&lt;br&gt;OMPL planning · KDL IK" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DFF6EE;strokeColor=#61C0AE;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="190" y="230" width="250" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ros2" value="ros2_control controller manager&lt;br&gt;100 Hz · JointTrajectoryController" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCEBFF;strokeColor=#5A7DB8;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="270" y="330" width="560" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="arm" value="arm controller&lt;br&gt;joints 1, 2, 3" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#5A7DB8;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="430" width="180" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="grip" value="gripper controller&lt;br&gt;joint 4 · joint 5 mimic" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#5A7DB8;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="430" width="200" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="state" value="state broadcaster&lt;br&gt;joint states" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EAF1FF;strokeColor=#5A7DB8;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="700" y="430" width="180" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="hw" value="hardware interface plugin&lt;br&gt;switched by is_sim launch argument" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FAD3B8;strokeColor=#E0883E;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="520" width="650" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="gz" value="GazeboSimSystem&lt;br&gt;is_sim = true" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE6D8;strokeColor=#E0883E;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="610" width="230" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="hwif" value="ManipulatorInterface&lt;br&gt;is_sim = false · Raspberry Pi" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FCE6D8;strokeColor=#E0883E;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="610" width="260" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="gzphys" value="Gazebo Harmonic&lt;br&gt;physics simulation" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFEFEF;strokeColor=#B3B3B3;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="700" width="230" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="sts" value="STS3215 x3 + GPIO servo&lt;br&gt;UART 1 Mbps · pigpiod PWM" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EFEFEF;strokeColor=#B3B3B3;fontSize=19;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="700" width="260" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="task" target="full" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="task" target="light" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="full" target="moveit" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="moveit" target="ros2" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e5" value="bypasses MoveIt" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="light" target="ros2" edge="1">
+                    <mxGeometry x="-0.5733" y="5" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="785" y="310"/>
+                            <mxPoint x="550" y="310"/>
+                        </Array>
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="ros2" target="arm" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;entryX=0.45;entryY=0.036;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="ros2" target="grip" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="ros2" target="state" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="arm" target="hw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="grip" target="hw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="state" target="hw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="hw" target="gz" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="hw" target="hwif" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="gz" target="gzphys" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#777777;fontSize=19;" parent="1" source="hwif" target="sts" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

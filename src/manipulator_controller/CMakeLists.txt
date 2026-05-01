@@ -12,6 +12,10 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(PkgConfig REQUIRED)
 
+# Check if pigpio library is available (required for Raspberry Pi GPIO)
+find_library(PIGPIO_LIB pigpio)
+find_library(PIGPIOD_IF2_LIB pigpiod_if2)
+
 pkg_check_modules(SERIAL libserial)
 
 set(SCSERVO_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/SCServo)
@@ -60,10 +64,6 @@ ament_target_dependencies(${PROJECT_NAME}_sts3215
   rclcpp_lifecycle
   rclcpp
 )
-
-# Check if pigpio library is available (required for Raspberry Pi GPIO)
-find_library(PIGPIO_LIB pigpio)
-find_library(PIGPIOD_IF2_LIB pigpiod_if2)
 
 if(PIGPIO_LIB AND PIGPIOD_IF2_LIB)
   message(STATUS "pigpio libraries found - building GPIO interface")

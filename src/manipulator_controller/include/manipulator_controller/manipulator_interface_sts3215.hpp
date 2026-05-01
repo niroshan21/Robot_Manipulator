@@ -46,6 +46,7 @@ private:  // these can only be used inside the class itself
   bool openPort();                  // Opens the serial port to communicate with the servos. Called in on_activate().                                                                   
   void closePort();                 // Closes the serial port. Called in on_deactivate() and the destructor.
   bool readPresentPosition(uint8_t servo_id, uint16_t &out_position);   // Reads the current position of a servo by its ID. Returns true on success and fills out_position with the raw encoder value.
+  bool readPresentSpeed(uint8_t servo_id, int &out_speed);              // Reads the current speed of a servo by its ID. Returns true on success and fills out_speed with steps/s.
   bool writeGoalPosition(uint8_t servo_id, uint16_t position);          // Writes a target position to a servo by its ID. Returns true on success.
   bool applyServoTuning();
   double rawToRadians(uint16_t raw, size_t joint_index) const;          // Converts a raw encoder value from the servo into radians using the servo's global range.
@@ -59,6 +60,7 @@ private:  // these can only be used inside the class itself
   int baudrate_;                    // The baudrate for the serial communication, e.g. 1000000. Loaded from URDF.
   bool feedback_from_hardware_;     // Whether to read actual positions from the hardware (true) or just mirror the commanded positions (false). Loaded from URDF.
   bool warned_feedback_;            // Whether we've already warned about missing feedback, to avoid spamming the logs.
+  bool warned_speed_feedback_;      // Whether we've already warned about missing speed feedback.
 
   SMS_STS scs_;   // The object from the SMS_STS library that handles the low-level communication with the servos.
 
@@ -110,6 +112,7 @@ private:  // these can only be used inside the class itself
   std::vector<double> position_commands_;       // The target positions for each joint, in radians. This is what the controller writes to, and write() sends these to the servos.
   std::vector<double> prev_position_commands_;  // The target positions from the previous control cycle, used to check if we need to send new commands.
   std::vector<double> position_states_;         // The current positions of each joint, in radians, as read from the servos. This is what the controller reads from, and read() updates these values based on feedback from the hardware (or mirrors the commands if feedback is disabled).
+  std::vector<double> velocity_states_;         // The current velocities of each joint, in radians/sec, as read from the servos.
 
   // Consecutive read-failure guard.
   // Prevents position_states_ from alternating between real servo position and
@@ -120,7 +123,9 @@ private:  // these can only be used inside the class itself
   //   fail < threshold → hold last_known_position_ (no flip, no spike).
   //   fail >= threshold→ mirror position_commands_ and warn once.
   std::vector<int>    consecutive_read_failures_; // per-servo failure counter
+  std::vector<int>    consecutive_speed_failures_; // per-servo speed read failure counter
   std::vector<double> last_known_position_;        // last successful read per servo, radians
+  std::vector<double> last_known_velocity_;        // last successful speed read per servo, rad/s
   static constexpr int READ_FAIL_THRESHOLD = 3;   // tolerate up to 3 consecutive missed reads
 
   size_t sts_joint_count_;
