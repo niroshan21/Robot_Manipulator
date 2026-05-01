@@ -51,11 +51,11 @@ arm_controller:
       goal_time: 0.0
       stopped_velocity_tolerance: 0.02
       joint_1:
-        goal: 0.01
+        goal: 0.006
       joint_2:
-        goal: 0.01
+        goal: 0.006
       joint_3:
-        goal: 0.01
+        goal: 0.006
 
 
 gripper_controller:
