@@ -447,8 +447,17 @@ CallbackReturn ManipulatorInterfaceSTS3215::on_activate(const rclcpp_lifecycle::
         last_known_position_[i] = pos;
         position_commands_[i] = pos;
         prev_position_commands_[i] = pos;
-        RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
-                    "Init joint %zu (servo %d) to %.4f rad", i + 1, servo_ids_[i], pos);
+        if (i == 1)
+        {
+          RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                      "Init joint %zu (servo %d): raw=%u rad=%.4f",
+                      i + 1, servo_ids_[i], raw_position, pos);
+        }
+        else
+        {
+          RCLCPP_INFO(rclcpp::get_logger("ManipulatorInterfaceSTS3215"),
+                      "Init joint %zu (servo %d) to %.4f rad", i + 1, servo_ids_[i], pos);
+        }
       }
     }
   }
