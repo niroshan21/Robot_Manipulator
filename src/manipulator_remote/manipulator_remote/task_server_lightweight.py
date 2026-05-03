@@ -24,7 +24,7 @@ class LightweightTaskServer(Node):
         self.get_logger().info('Starting Lightweight Task Server (No MoveIt)...')
         
         # Declare parameters (use_sim_time is already declared by ROS2)
-        self.declare_parameter('trajectory_dir', 'savedTrajectories')
+        self.declare_parameter('trajectory_dir', 'files/savedTrajectories')
         
         # Get trajectory directory
         trajectory_dir = self.get_parameter('trajectory_dir').value

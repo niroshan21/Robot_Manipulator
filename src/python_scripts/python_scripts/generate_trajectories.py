@@ -35,9 +35,11 @@ class TrajectoryGenerator(Node):
         # Declare parameters
         self.declare_parameter('save_directory',  'savedTrajectories')
         self.declare_parameter('planning_group',   'arm')           # kept for future use
+        self.declare_parameter('speed_scale',      2.0)             # 2x faster by default
 
         self.save_directory  = self.get_parameter('save_directory').value
         self.planning_group  = self.get_parameter('planning_group').value  # fix issue 10 — stored but now used below
+        self.speed_scale     = float(self.get_parameter('speed_scale').value)
 
         # ── MoveIt init ────────────────────────────────────────────────────────
         self.get_logger().info("Initialising MoveItPy …")
@@ -125,6 +127,12 @@ class TrajectoryGenerator(Node):
         self.get_logger().info(
             f"Planning trajectory through {len(waypoints)} waypoints …"
         )
+        if self.speed_scale <= 0.0:
+            self.get_logger().warn(
+                f"Invalid speed_scale={self.speed_scale}; using 1.0"
+            )
+            self.speed_scale = 1.0
+        time_scale = 1.0 / self.speed_scale
 
         all_points  = []
         time_offset = 0.0
@@ -132,7 +140,7 @@ class TrajectoryGenerator(Node):
         # ── Optional hold at the very first waypoint (fix issue 3) ────────────
         if stay_durations[0] > 0:
             self.get_logger().info(
-                f"  Adding {stay_durations[0]:.2f}s hold at start waypoint"
+                f"  Adding {stay_durations[0] * time_scale:.2f}s hold at start waypoint"
             )
             # Two identical zero-velocity points spanning the hold (fix issue 9)
             hold_pos = list(waypoints[0])
@@ -147,9 +155,9 @@ class TrajectoryGenerator(Node):
                 'positions':          hold_pos,
                 'velocities':         [0.0] * n_joints,
                 'accelerations':      [0.0] * n_joints,
-                'time_from_start_sec': stay_durations[0],
+                'time_from_start_sec': stay_durations[0] * time_scale,
             })
-            time_offset += stay_durations[0]
+            time_offset += stay_durations[0] * time_scale
 
         # ── Segment loop ───────────────────────────────────────────────────────
         for i in range(len(waypoints) - 1):
@@ -173,6 +181,7 @@ class TrajectoryGenerator(Node):
                 return None
 
             seg_duration = self._segment_duration(joint_traj)
+            scaled_duration = seg_duration * time_scale
 
             # Skip duplicate first point for all segments after the first
             # fix issue 4 — always skip point[0] after segment 0 to avoid
@@ -182,17 +191,17 @@ class TrajectoryGenerator(Node):
             start_idx = 1 if (i > 0 or time_offset > 0.0) else 0
 
             for point in joint_traj.points[start_idx:]:
-                seg_t = self._point_time(point)
+                seg_t = self._point_time(point) * time_scale
 
                 # Gripper: linear position interpolation over arm segment time
-                alpha       = (seg_t / seg_duration) if seg_duration > 0 else 1.0
+                alpha       = (seg_t / scaled_duration) if scaled_duration > 0 else 1.0
                 gripper_pos = gripper_start_pos + alpha * (gripper_goal_pos - gripper_start_pos)
 
                 # fix issue 5 — gripper velocity computed from position derivative,
                 # not hardcoded to 0.  dpos/dt = (goal - start) / duration
                 gripper_vel = (
-                    (gripper_goal_pos - gripper_start_pos) / seg_duration
-                    if seg_duration > 0 else 0.0
+                    (gripper_goal_pos - gripper_start_pos) / scaled_duration
+                    if scaled_duration > 0 else 0.0
                 )
                 # Taper velocity to 0 at segment endpoints for continuity
                 taper = 4.0 * alpha * (1.0 - alpha)   # peaks at 1 at midpoint, 0 at ends
@@ -208,17 +217,17 @@ class TrajectoryGenerator(Node):
                     'time_from_start_sec': time_offset + seg_t,
                 })
 
-            time_offset += seg_duration
+            time_offset += scaled_duration
             self.get_logger().info(
                 f"  ✓ Segment {i + 1}: {len(joint_traj.points)} arm points, "
-                f"duration {seg_duration:.2f}s"
+                f"duration {scaled_duration:.2f}s"
             )
 
             # ── Hold at goal of this segment (fix issue 9 — monotonic time) ──
             stay = stay_durations[i + 1]   # hold AFTER reaching waypoints[i+1]
             if stay > 0:
                 self.get_logger().info(
-                    f"  Adding {stay:.2f}s hold at waypoint {i + 1}"
+                    f"  Adding {stay * time_scale:.2f}s hold at waypoint {i + 1}"
                 )
                 last = all_points[-1]
                 n    = len(last['positions'])
@@ -232,9 +241,9 @@ class TrajectoryGenerator(Node):
                     'positions':           list(last['positions']),
                     'velocities':          [0.0] * n,
                     'accelerations':       [0.0] * n,
-                    'time_from_start_sec': time_offset + stay,
+                    'time_from_start_sec': time_offset + (stay * time_scale),
                 })
-                time_offset += stay
+                time_offset += stay * time_scale
 
         return all_points
 
@@ -282,7 +291,7 @@ class TrajectoryGenerator(Node):
             'points':          trajectory_points,
         }
 
-        filename = os.path.join(self.save_path, "full_smooth_trajectory.json")
+        filename = os.path.join(self.save_path, "task_5.json")
         with open(filename, 'w') as f:
             json.dump(trajectory_data, f, indent=2)
 

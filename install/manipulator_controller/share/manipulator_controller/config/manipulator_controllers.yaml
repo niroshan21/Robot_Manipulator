@@ -38,7 +38,7 @@ arm_controller:
     # Which state interfaces the controller expects to read (feedback).
     state_interfaces:
       - position
-      - velocity  # Even if we don't use velocity commands, we can read velocity states for feedback.
+      # - velocity  # IGNORE velocity feedback for now since our hardware/simulator doesn't provide it
       
     #the controller sends commands but does not rely on a low-level closed-loop controller or hardware to precisely track them. It operates open loop — it publishes desired setpoints and assumes the simulator / hardware will move accordingly, but it won’t try to close the loop itself. This is useful for simple simulations or systems without built-in position control.
     open_loop_control: false
@@ -51,11 +51,11 @@ arm_controller:
       goal_time: 0.0
       stopped_velocity_tolerance: 0.02
       joint_1:
-        goal: 0.01
+        goal: 0.006
       joint_2:
-        goal: 0.01
+        goal: 0.006
       joint_3:
-        goal: 0.01
+        goal: 0.006
 
 
 gripper_controller:
@@ -71,6 +71,6 @@ gripper_controller:
     state_interfaces:
       - position
 
-    open_loop_control: true
+    interpolate_from_desired_state: true
     allow_integration_in_goal_trajectories: false
 
