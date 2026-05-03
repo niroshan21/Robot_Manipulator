@@ -35,7 +35,7 @@ class TrajectoryGenerator(Node):
         # Declare parameters
         self.declare_parameter('save_directory',  'savedTrajectories')
         self.declare_parameter('planning_group',   'arm')           # kept for future use
-        self.declare_parameter('speed_scale',      2.0)             # 2x faster by default
+        self.declare_parameter('speed_scale',      4.0)             # 4x faster by default
 
         self.save_directory  = self.get_parameter('save_directory').value
         self.planning_group  = self.get_parameter('planning_group').value  # fix issue 10 — stored but now used below
@@ -291,7 +291,7 @@ class TrajectoryGenerator(Node):
             'points':          trajectory_points,
         }
 
-        filename = os.path.join(self.save_path, "task_5.json")
+        filename = os.path.join(self.save_path, "task_6.json")
         with open(filename, 'w') as f:
             json.dump(trajectory_data, f, indent=2)
 
